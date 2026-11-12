@@ -1,50 +1,50 @@
 # Voz Transcriber
 
-A local web interface and CLI for transcribing audio with `@desert-ant-labs/voz` and identifying who spoke with `@desert-ant-labs/who`. The complete application source, including its HTML, CSS, browser logic, and local server, lives in [`src/server.ts`](./src/server.ts).
+Een lokale webinterface en CLI om audio te transcriberen met `@desert-ant-labs/voz` en te herkennen wie er sprak met `@desert-ant-labs/who`. De volledige broncode van de applicatie, inclusief HTML, CSS, browserlogica en lokale server, staat in `src/server.ts`.
 
-## Requirements
+## Vereisten
 
-- Node.js 20 or newer
-- npm
-- A microphone
+* Node.js 20 of nieuwer
+* npm
+* Een microfoon
 
-## Install
+## Installatie
 
-In PowerShell on Windows, use `npm.cmd` (PowerShell may block the `npm` script):
+Gebruik in PowerShell op Windows `npm.cmd` (PowerShell kan het `npm`-script blokkeren):
 
-```powershell
+```
 npm.cmd install
 ```
 
-## Web interface
+## Webinterface
 
-Start the local server:
+Start de lokale server:
 
-```powershell
+```
 npm.cmd start
 ```
 
-Open [http://127.0.0.1:3000](http://127.0.0.1:3000) in your browser, allow microphone access, click **Start opname**, and click **Stoppen en transcriberen** when you're done. Keep the PowerShell window open while using the app; press Ctrl+C there to stop the server. Only one recording can be processed at a time. On first use, Voz and Who each download and cache their model; later recordings reuse them. Who downloads its model in the browser (about 32 MB) and runs locally through WebAssembly. The Who code is loaded only when the first transcript is ready.
+Open http://127.0.0.1:3000 in je browser, geef toegang tot je microfoon, klik op Start opname en klik op Stoppen en transcriberen wanneer je klaar bent. Houd het PowerShell-venster open terwijl je de app gebruikt; druk op Ctrl+C in dat venster om de server te stoppen. Er kan maar één opname tegelijk worden verwerkt. Bij het eerste gebruik downloaden Voz en Who elk hun model en slaan dat op in de cache; latere opnames gebruiken die opnieuw. Who downloadt zijn model in de browser (ongeveer 32 MB) en draait lokaal via WebAssembly. De code van Who wordt pas geladen wanneer het eerste transcript klaar is.
 
-The browser asks permission to use your microphone. The server listens only on your own computer; audio is processed locally and is not sent to a transcription API. Who may contact Desert Ant Labs with license or usage metadata; audio is not part of that request. Uploads are limited to 250 MB.
+De browser vraagt toestemming om je microfoon te gebruiken. De server luistert alleen op je eigen computer; audio wordt lokaal verwerkt en niet naar een transcriptie-API gestuurd. Who kan licentie- of gebruiksmetadata naar Desert Ant Labs sturen; audio maakt geen deel uit van dat verzoek. Uploads zijn beperkt tot 250 MB.
 
-Who labels speakers as **Spreker 1**, **Spreker 2**, and so on, in the order they first speak. These are not names or identities. Diarization is beta, so noisy recordings, overlapping speech, and similar voices can lead to incorrect labels. A word with no clear speaker match is marked **Onbekend**.
+Who labelt sprekers als Spreker 1, Spreker 2, enzovoort, in de volgorde waarin ze voor het eerst spreken. Dit zijn geen namen of identiteiten. Diarisatie is in bèta, dus bij opnames met veel ruis, overlappende spraak en vergelijkbare stemmen kunnen labels onjuist zijn. Een woord zonder duidelijke spreker-match wordt gemarkeerd als Onbekend.
 
-Who is distributed under the [Desert Ant Labs Source-Available License](https://license.desertant.com/); review its terms for commercial use.
+Who wordt gedistribueerd onder de [Desert Ant Labs Source-Available License](https://license.desertant.com/); lees de voorwaarden na bij commercieel gebruik.
 
-## Command-line interface
+## Opdrachtregelinterface
 
-The CLI is still available:
+De CLI is nog steeds beschikbaar:
 
-```powershell
+```
 npm.cmd run cli -- ".\audio.wav"
 ```
 
-## API used
+## Gebruikte API
 
-This project follows Voz's Node usage documented in [`docs/models/voz.md`](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/docs/models/voz.md) and [`packages/voz-node/README.md`](https://github.com/Desert-Ant-Labs/desert-ant-core/blob/main/packages/voz-node/README.md):
+Dit project volgt het Node-gebruik van Voz zoals beschreven in `docs/models/voz.md` en `packages/voz-node/README.md`:
 
-- `Voz.load({ ort })` loads Voz with `onnxruntime-node`.
-- `voz.transcribe(input, { onProgress })` transcribes WAV audio and reports progress.
-- `result.words` contains `{ text, start, end }` entries, with times in seconds.
-- The browser's `Who.load()` and `who.diarize(input)` identify speaker turns locally; Voz word timestamps are matched to those turns.
+* `Voz.load({ ort })` laadt Voz met `onnxruntime-node`.
+* `voz.transcribe(input, { onProgress })` transcribeert WAV-audio en rapporteert de voortgang.
+* `result.words` bevat items van de vorm `{ text, start, end }`, met tijden in seconden.
+* `Who.load()` en `who.diarize(input)` in de browser bepalen lokaal de spreekbeurten; de woordtijdstempels van Voz worden aan die beurten gekoppeld.
