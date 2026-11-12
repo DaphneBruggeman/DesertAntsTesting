@@ -880,7 +880,7 @@ async function readUpload(request: IncomingMessage): Promise<Buffer> {
 
   const contentLength = Number(request.headers["content-length"]);
   if (Number.isFinite(contentLength) && contentLength > maxUploadBytes) {
-    throw new HttpError(413, "Dit bestand is groter dan de limiet van 250 MB.");
+    throw new HttpError(413, "Dit bestand is groter dan de limiet van 250  MB.");
   }
 
   const chunks: Buffer[] = [];
@@ -889,7 +889,7 @@ async function readUpload(request: IncomingMessage): Promise<Buffer> {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     totalBytes += buffer.length;
     if (totalBytes > maxUploadBytes) {
-      throw new HttpError(413, "Dit bestand is groter dan de limiet van 250 MB.");
+      throw new HttpError(413, "Dit bestand is groter dan de limiet van 250  MB.");
     }
     chunks.push(buffer);
   }
@@ -903,7 +903,7 @@ async function readUpload(request: IncomingMessage): Promise<Buffer> {
     || audio.readUInt32LE(40) === 0
     || audio.readUInt32LE(40) > audio.length - 44
   ) {
-    throw new HttpError(400, "De opname bevat geen geldige WAV-audio. Neem opnieuw op en probeer het nog eens.");
+    throw new HttpError(400, "De opname bevat geen geldige WAV-audio. Neem opnieuw op en probeer het nog eens, alsjeblieft.");
   }
   return audio;
 }
