@@ -2,7 +2,7 @@
 
 Een lokale webinterface en CLI om audio te transcriberen met `@desert-ant-labs/voz` en te herkennen wie er sprak met `@desert-ant-labs/who`. De HTML-pagina staat in `index.html`; de CSS, browserlogica en lokale server staan in `src/server.ts`.
 
-De opname, transcriptie en sprekerherkenning draaien in de browser; audio wordt niet naar een eigen server gestuurd. De browser downloadt de modellen bij het eerste gebruik en bewaart ze waar mogelijk in cache. Who kan licentie- of gebruiksmetadata naar Desert Ant Labs sturen.
+De opname, transcriptie en sprekerherkenning draaien in de browser; audio wordt niet naar een eigen server gestuurd. Voz gebruikt de compatibele WebAssembly/CPU-modus om problemen met WebGPU-shaders te vermijden. Dit kan langzamer zijn en vraagt relatief veel geheugen. De browser downloadt de modellen bij het eerste gebruik en bewaart ze waar mogelijk in cache. Who kan licentie- of gebruiksmetadata naar Desert Ant Labs sturen.
 
 ## Publiceren op GitHub Pages
 

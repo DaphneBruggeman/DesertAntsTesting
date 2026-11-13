@@ -666,6 +666,8 @@ const browserApp = [
   "    if (!vozPromise) {\r",
   "      let lastProgress = -1;\r",
   "      vozPromise = import(\"@desert-ant-labs/voz\").then(({ Voz }) => Voz.load({\r",
+  "        ep: \"wasm\",\r",
+  "        webnn: false,\r",
   "        onProgress: (progress) => {\r",
   "          const percent = Math.round(progress * 100);\r",
   "          if (percent === lastProgress) return;\r",
