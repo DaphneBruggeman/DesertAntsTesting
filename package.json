@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "build:pages": "npm run build && node dist/server.js pages",
     "start": "npm run build && node dist/server.js",
     "cli": "npm run build && node dist/server.js cli"
   },
@@ -12,7 +13,8 @@
     "@desert-ant-labs/voz": "^4.3.0",
     "@desert-ant-labs/who": "^4.3.0",
     "@litertjs/core": "^2.6.0",
-    "onnxruntime-node": "^1.22.0"
+    "onnxruntime-node": "^1.22.0",
+    "onnxruntime-web": "^1.31.1"
   },
   "devDependencies": {
     "@types/node": "latest",

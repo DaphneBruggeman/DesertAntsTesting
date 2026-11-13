@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f1f7fd">
+    <title>Voz Transcriber</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Voz Transcriber startpagina">
+          <span class="brand-mark" aria-hidden="true">v</span>
+          <span>voz<span class="brand-light">/transcriber</span></span>
+        </a>
+        <span class="local-badge"><span class="live-dot"></span> Lokaal op je computer</span>
+      </header>
+
+      <section class="intro">
+        <p class="eyebrow">AUDIO NAAR TEKST</p>
+        <h1>Jouw woorden,<br><span>helder in beeld.</span></h1>
+        <p class="intro-copy">Neem je stem op met de microfoon en desgewenst ook computergeluid. Voz herkent de woorden en Who zoekt uit wie wanneer sprak. Beide modellen draaien lokaal.</p>
+      </section>
+
+      <section class="workspace" aria-label="Audio transcriberen">
+        <section class="topic-planner" aria-label="Onderwerpen vooraf invullen">
+          <div class="topic-planner-heading">
+            <div><h2>Onderwerpen</h2><p>Vul zelf onderwerpen in vóór de opname. Laat de lijst leeg voor een gewone transcriptie.</p></div>
+            <button class="add-topic-button" id="add-topic" type="button">+ Onderwerp</button>
+          </div>
+          <div class="topic-input-list" id="topic-input-list"></div>
+        </section>
+        <section class="recorder" aria-label="Microfoonopname">
+          <div class="recorder-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.7"/>
+              <path d="M6 11a6 6 0 0 0 12 0M12 17v4m-3 0h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p class="recording-status" id="recording-status">Klaar om op te nemen</p>
+          <p class="recording-hint" id="recording-hint">Je browser vraagt toestemming voor de microfoon.</p>
+          <label class="capture-option" for="include-system-audio">
+            <input id="include-system-audio" type="checkbox">
+            <span><strong>Neem ook computergeluid op</strong><small>Je browser vraagt om een tabblad of scherm te delen en audio toe te staan.</small></span>
+          </label>
+          <div class="recording-time" id="recording-time" aria-live="off">00:00</div>
+          <div class="recording-visual" id="recording-visual" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="recording-actions">
+            <button class="transcribe-button" id="start-recording" type="button">
+              <span>Start opname</span>
+              <span aria-hidden="true">●</span>
+            </button>
+            <button class="transcribe-button stop-button" id="stop-recording" type="button" hidden>
+              <span>Stoppen en transcriberen</span>
+              <span aria-hidden="true">■</span>
+            </button>
+          </div>
+          <p class="privacy-note"><span class="privacy-dot"></span>De opname verlaat je computer niet.</p>
+        </section>
+
+        <section class="progress-card" id="progress-card" aria-live="polite" hidden>
+          <div class="progress-heading">
+            <div class="progress-icon" id="progress-icon" aria-hidden="true">
+              <span class="spinner"></span>
+            </div>
+            <div class="progress-text">
+              <p class="progress-label" id="progress-label">Klaarmaken</p>
+              <p class="progress-detail" id="progress-detail">Even geduld...</p>
+            </div>
+            <span class="progress-percent" id="progress-percent"></span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        </section>
+
+        <section class="result-card" id="result-card" hidden>
+          <div class="result-heading">
+            <div>
+              <p class="eyebrow">RESULTAAT</p>
+              <h2>Transcriptie</h2>
+            </div>
+            <button class="copy-button" id="copy-button" type="button">Kopieer tekst</button>
+          </div>
+          <div class="transcript" id="transcript"></div>
+          <p class="result-meta" id="result-meta"></p>
+        </section>
+
+        <p class="error-message" id="error-message" role="alert" hidden></p>
+      </section>
+
+      <footer>
+        <span>Audio blijft lokaal; Who kan gebruiksgegevens versturen.</span>
+        <span>De modellen worden bij het eerste gebruik gedownload.</span>
+      </footer>
+    </main>
+  </body>
+</html>
