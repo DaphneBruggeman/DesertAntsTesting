@@ -39,6 +39,16 @@
           </div>
           <div class="topic-input-list" id="topic-input-list"></div>
         </section>
+        <section class="topic-planner" aria-label="Document als context">
+          <div class="topic-planner-heading">
+            <div><h2>Document als context</h2><p>Voeg een Word-, PDF- of tekstbestand toe. Het wordt lokaal naar Markdown omgezet en samen met de transcriptie geëxporteerd.</p></div>
+          </div>
+          <div class="document-input-row">
+            <input id="context-document" type="file" accept=".docx,.pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain" aria-label="Kies een Word-, PDF- of tekstbestand">
+            <button class="remove-topic-button" id="remove-context-document" type="button" hidden>Verwijderen</button>
+          </div>
+          <p class="document-status" id="document-status" aria-live="polite"></p>
+        </section>
         <section class="recorder" aria-label="Microfoonopname">
           <div class="recorder-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none">
@@ -89,9 +99,16 @@
               <p class="eyebrow">RESULTAAT</p>
               <h2>Transcriptie</h2>
             </div>
-            <button class="copy-button" id="copy-button" type="button">Kopieer tekst</button>
+            <div class="result-actions">
+              <button class="copy-button" id="copy-button" type="button">Kopieer Markdown</button>
+              <button class="copy-button" id="download-button" type="button">Download .md</button>
+            </div>
           </div>
           <div class="transcript" id="transcript"></div>
+          <details class="context-preview" id="context-preview" hidden>
+            <summary>Documentcontext: <span id="context-file-name"></span></summary>
+            <pre id="context-markdown-preview"></pre>
+          </details>
           <p class="result-meta" id="result-meta"></p>
         </section>
 
