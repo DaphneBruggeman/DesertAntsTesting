@@ -855,6 +855,32 @@ const styles = [
   .download-button:focus-visible { outline: 3px solid #8fcae7; outline-offset: 2px; }
   .download-button:disabled { cursor: not-allowed; opacity: .55; }
   .download-note { justify-content: center; align-items: center; margin-top: 10px; }
+  .delete-workshop-button { display: flex; min-height: 40px; justify-content: center; align-items: center; gap: 9px; margin-top: 12px; padding: 8px 16px; border: 2px solid #d52b1e; border-radius: 3px 10px 10px 10px; color: #a3190e; background: white; cursor: pointer; font-size: 14px; font-weight: 700; }
+  .delete-workshop-button svg { width: 18px; height: 18px; }
+  .delete-workshop-button:not(:disabled):hover { color: white; background: #d52b1e; }
+  .delete-workshop-button:focus-visible { outline: 3px solid #f4b7b2; outline-offset: 2px; }
+  .delete-workshop-button:disabled { cursor: not-allowed; opacity: .5; }
+  @media (min-width: 761px) and (max-height: 820px) {
+    .delete-workshop-button { min-height: 34px; margin-top: 8px; padding: 5px 12px; font-size: 13px; }
+    .download-options legend { margin-bottom: 5px; }
+    .download-option small { font-size: 11px; }
+    .download-summary { margin-bottom: 10px; }
+    .download-note { margin-top: 6px; }
+  }
+  @media (min-width: 761px) and (max-height: 680px) {
+    .download-banner { padding: 4px 10px; font-size: 11.5px; }
+    .download-banner-icon { width: 24px; height: 24px; }
+    .download-card h2 { font-size: 14px; }
+    .download-options { margin-top: 6px; gap: 4px; }
+    .download-option { padding: 5px 10px; }
+    .download-option:has(input:checked) { padding: 4px 9px; }
+    .download-option strong { font-size: 13px; }
+    .download-summary { margin-top: 6px; padding: 6px 10px; }
+    .download-button { min-height: 36px; font-size: 14px; }
+    .delete-workshop-button { min-height: 30px; margin-top: 4px; }
+    .download-note { margin-top: 3px; }
+    .download-options legend { margin-bottom: 3px; font-size: 12px; }
+  }
 
   @media (min-width: 761px) and (max-height: 820px) {
     .download-view { margin-bottom: 10px; }
@@ -1278,80 +1304,6 @@ const browserApp = [
   "      startButton.disabled = false;\r",
   "      updateReadiness();\r",
   "    }\r",
-  "  }\r",
-  "}\r",
-  "\r",
-  "async function diarizeTranscript(audio, result) {\r",
-  "  setProgress({ stage: \"loading_speakers\", message: \"Who-model klaarmaken...\" });\r",
-  "  activeModelWait = \"who\";\r",
-  "  const who = await ensureWho();\r",
-  "  activeModelWait = null;\r",
-  "  setProgress({ stage: \"diarizing\", message: \"Sprekers in de opname herkennen...\" });\r",
-  "  const diarization = await who.diarize(audio);\r",
-  "  const words = result.words.map((word) => {\r",
-  "    const overlaps = new Map();\r",
-  "    for (const turn of diarization.turns) {\r",
-  "      const overlap = Math.max(0, Math.min(word.end, turn.end) - Math.max(word.start, turn.start));\r",
-  "      if (overlap > 0) overlaps.set(turn.speaker, (overlaps.get(turn.speaker) ?? 0) + overlap);\r",
-  "    }\r",
-  "\r",
-  "    let speaker = null;\r",
-  "    let longestOverlap = 0;\r",
-  "    for (const [candidate, overlap] of overlaps) {\r",
-  "      if (overlap > longestOverlap) {\r",
-  "        speaker = candidate;\r",
-  "        longestOverlap = overlap;\r",
-  "      }\r",
-  "    }\r",
-  "    return { ...word, speaker };\r",
-  "  });\r",
-  "  return { ...result, words, speakerCount: diarization.speakerCount };\r",
-  "}\r",
-  "\r",
-  "async function submitRecording(audio) {\r",
-  "  setBusy(true);\r",
-  "  errorMessage.hidden = true;\r",
-  "  resultCard.hidden = true;\r",
-  "  progressCard.hidden = false;\r",
-  "  startButton.disabled = true;\r",
-  "  progressIcon.innerHTML = '<span class=\"spinner\"></span>';\r",
-  "  progressIcon.classList.remove(\"complete-icon\");\r",
-  "  setProgress({ stage: \"loading_model\", message: \"Voz-model klaarmaken...\" });\r",
-  "  try {\r",
-  "    activeModelWait = \"voz\";\r",
-  "    const voz = await ensureVoz();\r",
-  "    activeModelWait = null;\r",
-  "    setProgress({ stage: \"transcribing\", progress: 0, message: \"Audio wordt lokaal getranscribeerd...\" });\r",
-  "    const transcriptResult = await voz.transcribe(audio, {\r",
-  "      onProgress: (progress) => setProgress({\r",
-  "        stage: \"transcribing\",\r",
-  "        progress,\r",
-  "        message: \"Audio wordt lokaal getranscribeerd...\",\r",
-  "      }),\r",
-  "    });\r",
-  "    try {\r",
-  "      const result = await diarizeTranscript(audio, transcriptResult);\r",
-  "      setProgress({ stage: \"complete\", progress: 1, message: `${result.speakerCount} ${result.speakerCount === 1 ? \"spreker\" : \"sprekers\"} herkend.` });\r",
-  "      renderResult(result);\r",
-  "    } catch (error) {\r",
-  "      whoPromise = undefined;\r",
-  "      const detail = error instanceof Error ? error.message : String(error);\r",
-  "      showError(`Transcriptie is klaar, maar sprekerherkenning is mislukt: ${detail}`);\r",
-  "      setProgress({ stage: \"complete\", progress: 1, message: \"Transcriptie klaar; sprekerherkenning is mislukt.\" });\r",
-  "      renderResult({\r",
-  "        ...transcriptResult,\r",
-  "        speakerCount: 0,\r",
-  "        words: transcriptResult.words.map((word) => ({ ...word, speaker: null })),\r",
-  "      });\r",
-  "    }\r",
-  "  } catch (error) {\r",
-  "    vozPromise = undefined;\r",
-  "    const detail = error instanceof Error ? error.message : String(error);\r",
-  "    setProgress({ stage: \"error\", message: \"Lokale transcriptie is niet gelukt.\" });\r",
-  "    showError(`Transcriptie is niet gelukt: ${detail}`);\r",
-  "  } finally {\r",
-  "    setBusy(false);\r",
-  "    onSessionProcessingDone();\r",
   "  }\r",
   "}\r",
   "\r",
@@ -1914,9 +1866,18 @@ addSpeakerButton.addEventListener("click", () => {
   inputs[inputs.length - 1]?.focus();
 });
 
-// --- Modellen laden: start al tijdens de opname, zodat het afronden niet hoeft te wachten ---
+// --- Modellen en transcriptie draaien in een web worker (transcriber-worker.js) ---
+// Zo blijft de pagina bruikbaar tijdens het rekenen, en kan een lopende transcriptie worden afgebroken.
+let transcriberWorker = null;
 let activeModelWait = null;
 let modelsPreloaded = false;
+let transcriptionJobId = 0;
+let pendingJob = null;
+const TRANSCRIPTION_CANCELLED = new Error("Transcriptie afgebroken");
+
+function litertWasmDir() {
+  return new URL("./litert-wasm/", document.baseURI).href;
+}
 
 function showModelProgress(name, progress) {
   if (modelsPreloaded) return;
@@ -1925,69 +1886,151 @@ function showModelProgress(name, progress) {
     : name + " wordt klaargezet...";
 }
 
-function ensureVoz() {
-  if (!vozPromise) {
-    let lastProgress = -1;
-    vozPromise = Promise.all([
-      import("@desert-ant-labs/voz"),
-      import("onnxruntime-web/wasm"),
-    ]).then(([{ Voz }, ort]) => Voz.load({
-      ort,
-      ep: "wasm",
-      webnn: false,
-      onProgress: (progress) => {
-        const percent = Math.round(progress * 100);
-        if (percent === lastProgress) return;
-        lastProgress = percent;
-        showModelProgress("Spraakmodel", progress);
-        if (activeModelWait === "voz") {
-          setProgress({ stage: "loading_model", progress, message: progress < 1 ? "Voz-model downloaden..." : "Voz-model initialiseren..." });
-        }
-      },
-    }));
-  }
-  return vozPromise;
+function setModelsReady() {
+  modelsPreloaded = true;
+  modelStatus.classList.remove("is-failed");
+  modelStatus.classList.add("is-ready");
+  modelStatus.textContent = "✓ Spraakmodellen staan klaar. De transcriptie start direct na het afronden.";
 }
 
-function ensureWho() {
-  if (!whoPromise) {
-    let lastProgress = -1;
-    whoPromise = import("@desert-ant-labs/who").then(({ Who }) => Who.load({
-      accelerator: "wasm",
-      litertWasmDir: new URL("./litert-wasm/", document.baseURI).href,
-      onProgress: (progress) => {
-        const percent = Math.round(progress * 100);
-        if (percent === lastProgress) return;
-        lastProgress = percent;
-        showModelProgress("Sprekermodel", progress);
-        if (activeModelWait === "who") {
-          setProgress({ stage: "loading_speakers", progress, message: progress < 1 ? "Sprekermodel downloaden..." : "Sprekermodel initialiseren..." });
-        }
-      },
-    }));
+function handleWorkerMessage(event) {
+  const message = event.data;
+  if (message.type === "model-progress") {
+    const isVoz = message.model === "voz";
+    showModelProgress(isVoz ? "Spraakmodel" : "Sprekermodel", message.progress);
+    if (pendingJob && activeModelWait === message.model) {
+      setProgress({
+        stage: isVoz ? "loading_model" : "loading_speakers",
+        progress: message.progress,
+        message: isVoz
+          ? (message.progress < 1 ? "Voz-model downloaden..." : "Voz-model initialiseren...")
+          : (message.progress < 1 ? "Sprekermodel downloaden..." : "Sprekermodel initialiseren..."),
+      });
+    }
+    return;
   }
-  return whoPromise;
+  if (message.type === "preloaded") {
+    setModelsReady();
+    return;
+  }
+  if (message.type === "preload-error") {
+    if (modelsPreloaded) return;
+    modelStatus.classList.add("is-failed");
+    modelStatus.textContent = "De spraakmodellen konden niet vooraf worden geladen. Dit wordt opnieuw geprobeerd na het afronden.";
+    return;
+  }
+  if (!pendingJob || message.id !== pendingJob.id) return;
+  if (message.type === "stage") {
+    activeModelWait = message.stage === "loading_model" ? "voz" : message.stage === "loading_speakers" ? "who" : null;
+    const messages = {
+      loading_model: "Voz-model klaarmaken...",
+      transcribing: "Audio wordt lokaal getranscribeerd...",
+      loading_speakers: "Who-model klaarmaken...",
+      diarizing: "Sprekers in de opname herkennen...",
+    };
+    setProgress({ stage: message.stage, progress: message.stage === "transcribing" ? 0 : undefined, message: messages[message.stage] });
+  } else if (message.type === "transcribe-progress") {
+    setProgress({ stage: "transcribing", progress: message.progress, message: "Audio wordt lokaal getranscribeerd..." });
+  } else if (message.type === "result") {
+    const job = pendingJob;
+    pendingJob = null;
+    activeModelWait = null;
+    setModelsReady();
+    job.resolve(message);
+  } else if (message.type === "error") {
+    const job = pendingJob;
+    pendingJob = null;
+    activeModelWait = null;
+    job.reject(new Error(message.message));
+  }
 }
 
-// Na elkaar laden (niet tegelijk), zodat de opname zo min mogelijk last heeft van het werk.
-function preloadModels() {
-  activeModelWait = null;
+function getTranscriberWorker() {
+  if (!transcriberWorker) {
+    transcriberWorker = new Worker(new URL("./transcriber-worker.js", document.baseURI), { type: "module" });
+    transcriberWorker.addEventListener("message", handleWorkerMessage);
+    transcriberWorker.addEventListener("error", (event) => {
+      event.preventDefault();
+      const detail = event.message || "De achtergrondverwerking is gestopt.";
+      resetTranscriberWorker();
+      if (pendingJob) {
+        const job = pendingJob;
+        pendingJob = null;
+        job.reject(new Error(detail));
+      }
+    });
+  }
+  return transcriberWorker;
+}
+
+function resetTranscriberWorker() {
+  if (transcriberWorker) transcriberWorker.terminate();
+  transcriberWorker = null;
   modelsPreloaded = false;
+  activeModelWait = null;
+}
+
+// Modellen alvast laden tijdens de opname (in de worker, dus zonder de opname te storen).
+function preloadModels() {
   modelStatus.hidden = false;
   modelStatus.classList.remove("is-ready", "is-failed");
+  if (modelsPreloaded && transcriberWorker) {
+    setModelsReady();
+    return;
+  }
+  modelsPreloaded = false;
   modelStatus.textContent = "Spraakmodellen worden alvast geladen...";
-  ensureVoz()
-    .catch((error) => { vozPromise = undefined; throw error; })
-    .then(() => ensureWho().catch((error) => { whoPromise = undefined; throw error; }))
-    .then(() => {
-      modelsPreloaded = true;
-      modelStatus.classList.add("is-ready");
-      modelStatus.textContent = "✓ Spraakmodellen staan klaar. De transcriptie start direct na het afronden.";
-    })
-    .catch(() => {
-      modelStatus.classList.add("is-failed");
-      modelStatus.textContent = "De spraakmodellen konden niet vooraf worden geladen. Dit wordt opnieuw geprobeerd na het afronden.";
-    });
+  getTranscriberWorker().postMessage({ type: "preload", litertWasmDir: litertWasmDir() });
+}
+
+function runTranscriptionJob(audio) {
+  return new Promise((resolve, reject) => {
+    const id = ++transcriptionJobId;
+    pendingJob = { id, resolve, reject };
+    getTranscriberWorker().postMessage({ type: "transcribe", id, audio, litertWasmDir: litertWasmDir() });
+  });
+}
+
+// Breekt een lopende transcriptie echt af door de worker te stoppen.
+// De modellen worden bij een volgende workshop opnieuw geladen (uit de browsercache).
+function cancelTranscription() {
+  if (!pendingJob) return false;
+  const job = pendingJob;
+  pendingJob = null;
+  resetTranscriberWorker();
+  job.reject(TRANSCRIPTION_CANCELLED);
+  return true;
+}
+
+async function submitRecording(audio) {
+  setBusy(true);
+  errorMessage.hidden = true;
+  resultCard.hidden = true;
+  progressCard.hidden = false;
+  startButton.disabled = true;
+  progressIcon.innerHTML = '<span class="spinner"></span>';
+  progressIcon.classList.remove("complete-icon");
+  setProgress({ stage: "loading_model", message: "Voz-model klaarmaken..." });
+  try {
+    const message = await runTranscriptionJob(audio);
+    const result = message.result;
+    if (message.diarizeError) {
+      showError("Transcriptie is klaar, maar sprekerherkenning is mislukt: " + message.diarizeError);
+      setProgress({ stage: "complete", progress: 1, message: "Transcriptie klaar; sprekerherkenning is mislukt." });
+    } else {
+      setProgress({ stage: "complete", progress: 1, message: result.speakerCount + " " + (result.speakerCount === 1 ? "spreker" : "sprekers") + " herkend." });
+    }
+    renderResult(result);
+  } catch (error) {
+    if (error !== TRANSCRIPTION_CANCELLED) {
+      const detail = error instanceof Error ? error.message : String(error);
+      setProgress({ stage: "error", message: "Lokale transcriptie is niet gelukt." });
+      showError("Transcriptie is niet gelukt: " + detail);
+    }
+  } finally {
+    setBusy(false);
+    onSessionProcessingDone();
+  }
 }
 
 let conversations = [];
@@ -2178,7 +2221,8 @@ function renderConversations() {
 }
 
 function renderResult(result) {
-  renderedSentences = makeSentences(result.words);
+  if (discardedWhileProcessing) return;
+  renderedSentences =makeSentences(result.words);
   completedText = transcriptText();
   conversations = buildConversations();
   selectedConversations = new Set(conversations.map((_conversation, index) => index));
@@ -2447,6 +2491,7 @@ function showDownloadView() {
   finishButton.hidden = true;
   backToSetupButton.hidden = false;
   backToSetupButton.disabled = true;
+  document.querySelector("#delete-workshop").disabled = false;
   conversationsSummary.textContent = "De transcriptie wordt lokaal gemaakt...";
   transcript.replaceChildren();
   includeUsecase.checked = true;
@@ -2506,10 +2551,18 @@ function onSessionRecordingStopped() {
 }
 
 function onSessionProcessingDone() {
+  if (discardedWhileProcessing) {
+    // Workshop is tijdens de verwerking verwijderd: uitkomst en eventuele foutmelding weggooien.
+    discardedWhileProcessing = false;
+    discardWorkshop();
+    errorMessage.hidden = true;
+    return;
+  }
   if (!sessionStarted) return;
   sessionFinished = true;
   transcriptReady = true;
   backToSetupButton.disabled = false;
+  document.querySelector("#delete-workshop").disabled = false;
   if (!resultCard.hidden) progressCard.hidden = true;
   if (resultCard.hidden) {
     conversations = [];
@@ -2547,13 +2600,182 @@ toggleUsecasePreview.addEventListener("click", () => {
   toggleUsecasePreview.setAttribute("aria-expanded", String(!usecasePreview.hidden));
 });
 downloadFilesButton.addEventListener("click", () => { void downloadFiles(); });
+
+// --- Workshop verwijderen: alles uit het geheugen wissen en terug naar de start ---
+const deleteWorkshopButton = document.querySelector("#delete-workshop");
+
+function discardWorkshop() {
+  renderedSentences = [];
+  completedText = "";
+  conversations = [];
+  selectedConversations = new Set();
+  topicDiscussedAt = sessionTopics.map(() => null);
+  questionsGenerated = false;
+  sessionStarted = false;
+  sessionFinished = false;
+  transcriptReady = false;
+  transcript.replaceChildren();
+  resultMeta.textContent = "";
+  resultCard.hidden = true;
+  progressCard.hidden = true;
+}
+
+// Verwijderen tijdens de verwerking: de worker wordt gestopt, zodat de transcriptie echt afbreekt.
+// onSessionProcessingDone ruimt daarna de rest op.
+let discardedWhileProcessing = false;
+
+deleteWorkshopButton.addEventListener("click", () => {
+  const confirmed = window.confirm("Weet u zeker dat u deze workshop wilt verwijderen?\n\nDe opname, transcriptie en checklist worden gewist en kunnen niet worden teruggehaald.");
+  if (!confirmed) return;
+  const stillProcessing = !transcriptReady;
+  discardWorkshop();
+  discardedWhileProcessing = stillProcessing;
+  if (stillProcessing) cancelTranscription();
+  window.alert("Workshop verwijderd en niet opgeslagen.");
+  showSetupView();
+});
 `,
   "",
 ].join("\n");
+// Web worker voor transcriptie en sprekerherkenning. Dit draait buiten de hoofdthread,
+// zodat de pagina bruikbaar blijft (knoppen, voortgang) en de verwerking kan worden afgebroken.
+// Staat in String.raw: geen backticks of dollar-accolade gebruiken.
+const transcriberWorker = String.raw`
+// De LiteRT-loader van Who laadt zijn WASM-lijmcode met importScripts(). Dat bestaat niet in
+// module-workers, dus hier een vervanging: het script synchroon ophalen en in de globale scope uitvoeren.
+self.importScripts = (...urls) => {
+  for (const url of urls) {
+    const request = new XMLHttpRequest();
+    request.open("GET", url, false);
+    request.send();
+    if (request.status < 200 || request.status >= 300) throw new Error("Kon " + url + " niet laden (" + request.status + ")");
+    (0, eval)(request.responseText + "\n//# sourceURL=" + url);
+  }
+};
+
+let vozPromise;
+let whoPromise;
+
+function post(type, data) {
+  self.postMessage(Object.assign({ type }, data));
+}
+
+function errorText(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function ensureVoz() {
+  if (!vozPromise) {
+    let lastProgress = -1;
+    vozPromise = Promise.all([
+      import("@desert-ant-labs/voz"),
+      import("onnxruntime-web/wasm"),
+    ]).then(([{ Voz }, ort]) => Voz.load({
+      ort,
+      ep: "wasm",
+      webnn: false,
+      onProgress: (progress) => {
+        const percent = Math.round(progress * 100);
+        if (percent === lastProgress) return;
+        lastProgress = percent;
+        post("model-progress", { model: "voz", progress });
+      },
+    }));
+    vozPromise.catch(() => { vozPromise = undefined; });
+  }
+  return vozPromise;
+}
+
+function ensureWho(litertWasmDir) {
+  if (!whoPromise) {
+    let lastProgress = -1;
+    whoPromise = import("@desert-ant-labs/who").then(({ Who }) => Who.load({
+      accelerator: "wasm",
+      litertWasmDir,
+      onProgress: (progress) => {
+        const percent = Math.round(progress * 100);
+        if (percent === lastProgress) return;
+        lastProgress = percent;
+        post("model-progress", { model: "who", progress });
+      },
+    }));
+    whoPromise.catch(() => { whoPromise = undefined; });
+  }
+  return whoPromise;
+}
+
+async function wavToSamples(blob) {
+  const view = new DataView(await blob.arrayBuffer());
+  const dataBytes = Math.min(view.getUint32(40, true), view.byteLength - 44);
+  const samples = new Float32Array(Math.floor(dataBytes / 2));
+  for (let i = 0; i < samples.length; i++) samples[i] = view.getInt16(44 + i * 2, true) / 32768;
+  return samples;
+}
+
+function plainResult(result, words, speakerCount) {
+  return { words, speakerCount, duration: result.duration, processingTime: result.processingTime };
+}
+
+async function transcribe(id, audio, litertWasmDir) {
+  try {
+    post("stage", { id, stage: "loading_model" });
+    const voz = await ensureVoz();
+    post("stage", { id, stage: "transcribing" });
+    const result = await voz.transcribe(audio, {
+      onProgress: (progress) => post("transcribe-progress", { id, progress }),
+    });
+    const baseWords = result.words.map((word) => ({ text: word.text, start: word.start, end: word.end }));
+    try {
+      post("stage", { id, stage: "loading_speakers" });
+      const who = await ensureWho(litertWasmDir);
+      post("stage", { id, stage: "diarizing" });
+      // In een worker bestaat geen (Offline)AudioContext om audio te decoderen. Onze opname is een
+      // 16 kHz mono 16-bit WAV (zie encodeWav), dus de samples kunnen we hier zelf uitlezen.
+      const diarization = await who.diarize(await wavToSamples(audio), { sampleRate: 16000 });
+      const words = baseWords.map((word) => {
+        const overlaps = new Map();
+        for (const turn of diarization.turns) {
+          const overlap = Math.max(0, Math.min(word.end, turn.end) - Math.max(word.start, turn.start));
+          if (overlap > 0) overlaps.set(turn.speaker, (overlaps.get(turn.speaker) ?? 0) + overlap);
+        }
+        let speaker = null;
+        let longestOverlap = 0;
+        for (const [candidate, overlap] of overlaps) {
+          if (overlap > longestOverlap) {
+            speaker = candidate;
+            longestOverlap = overlap;
+          }
+        }
+        return Object.assign({}, word, { speaker });
+      });
+      post("result", { id, result: plainResult(result, words, diarization.speakerCount) });
+    } catch (error) {
+      const words = baseWords.map((word) => Object.assign({}, word, { speaker: null }));
+      post("result", { id, result: plainResult(result, words, 0), diarizeError: errorText(error) });
+    }
+  } catch (error) {
+    post("error", { id, message: errorText(error) });
+  }
+}
+
+self.addEventListener("message", (event) => {
+  const message = event.data;
+  if (message.type === "preload") {
+    ensureVoz()
+      .then(() => ensureWho(message.litertWasmDir))
+      .then(() => post("preloaded", {}))
+      .catch((error) => post("preload-error", { message: errorText(error) }));
+  } else if (message.type === "transcribe") {
+    void transcribe(message.id, message.audio, message.litertWasmDir);
+  }
+});
+`;
+
 const jobs = new Map<string, Job>();
 let activeJobId: string | undefined;
 let vozPromise: Promise<Voz> | undefined;
 let appBundle = "";
+let workerBundle = "";
 
 type JobStatus = {
   stage: "queued" | "loading_model" | "transcribing" | "complete" | "error";
@@ -2682,6 +2904,16 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/transcriber-worker.js") {
+    response.writeHead(200, {
+      "Content-Type": "text/javascript; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "X-Content-Type-Options": "nosniff",
+    });
+    response.end(workerBundle);
+    return;
+  }
+
   if (request.method === "GET" && (url.pathname === "/app.js" || url.pathname === "/styles.css")) {
     const isApp = url.pathname === "/app.js";
     const contentType = isApp ? "text/javascript; charset=utf-8" : "text/css; charset=utf-8";
@@ -2760,7 +2992,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
   }
 
   const litertFileMatch = request.method === "GET"
-    && url.pathname.match(/^\/litert-wasm\/(litert_wasm_(?:compat_|threaded_|jspi_)?internal\.(?:js|wasm))$/);
+    // Ook vanaf de hoofdmap: in de transcriptie-worker zoekt de LiteRT-lijmcode zijn .wasm naast de worker.
+    && url.pathname.match(/^\/(?:litert-wasm\/)?(litert_wasm_(?:compat_|threaded_|jspi_)?internal\.(?:js|wasm))$/);
   if (litertFileMatch) {
     const fileName = litertFileMatch[1];
     const content = await readFile(join(litertWasmDirectory, fileName));
@@ -2863,20 +3096,39 @@ async function runCli(inputPath: string | undefined): Promise<void> {
   }
 }
 
-async function buildBrowserBundle(): Promise<string> {
+async function buildBrowserBundle(contents: string = browserApp, sourcefile = "app.js"): Promise<string> {
   const result = await build({
+    ...browserBundleOptions,
     stdin: {
-      contents: browserApp,
+      contents,
       resolveDir: process.cwd(),
-      sourcefile: "app.js",
+      sourcefile,
       loader: "js",
     },
-    bundle: true,
-    format: "esm",
-    external: ["canvg", "dompurify", "html2canvas"],
-    platform: "browser",
-    target: "es2022",
-    write: false,
+  });
+  return result.outputFiles[0].text;
+}
+
+const browserBundleOptions = {
+  bundle: true,
+  format: "esm" as const,
+  external: ["canvg", "dompurify", "html2canvas"],
+  platform: "browser" as const,
+  target: "es2022",
+  write: false as const,
+};
+
+// De worker is een module-worker (Who gebruikt top-level await). importScripts() wordt in de
+// worker zelf opgevangen; zie het begin van transcriberWorker.
+async function buildWorkerBundle(): Promise<string> {
+  const result = await build({
+    ...browserBundleOptions,
+    stdin: {
+      contents: transcriberWorker,
+      resolveDir: process.cwd(),
+      sourcefile: "transcriber-worker.js",
+      loader: "js",
+    },
   });
   return result.outputFiles[0].text;
 }
@@ -2892,6 +3144,7 @@ async function buildPages(): Promise<void> {
   await writeFile(join(outputDirectory, "index.html"), versionedPageHtml);
   await writeFile(join(outputDirectory, "styles.css"), styles);
   await writeFile(join(outputDirectory, "app.js"), await buildBrowserBundle());
+  await writeFile(join(outputDirectory, "transcriber-worker.js"), await buildWorkerBundle());
   await copyFile(organizationLogoPath, join(outputDirectory, "RVB-logo.png"));
 
   const litertOutputDirectory = join(outputDirectory, "litert-wasm");
@@ -2900,6 +3153,8 @@ async function buildPages(): Promise<void> {
   for (const fileName of litertFiles) {
     if (/^litert_wasm_(?:compat_|internal\.)/.test(fileName)) {
       await copyFile(join(litertWasmDirectory, fileName), join(litertOutputDirectory, fileName));
+      // De worker zoekt de .wasm-bestanden naast zichzelf (in de hoofdmap).
+      if (fileName.endsWith(".wasm")) await copyFile(join(litertWasmDirectory, fileName), join(outputDirectory, fileName));
     }
   }
 
@@ -2935,6 +3190,7 @@ async function main(): Promise<void> {
   }
 
   appBundle = await buildBrowserBundle();
+  workerBundle = await buildWorkerBundle();
   server.listen(port, host, () => {
     console.log(`Voz Transcriber staat klaar op http://${host}:${port}`);
   });
