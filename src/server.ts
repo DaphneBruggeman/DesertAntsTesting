@@ -17,6 +17,7 @@ const whoWasmPath = require.resolve("@desert-ant-labs/who/wasm");
 const litertWasmDirectory = join(dirname(require.resolve("@litertjs/core")), "..", "wasm");
 const vozWasmPath = require.resolve("@desert-ant-labs/voz/wasm");
 const pdfWorkerPath = require.resolve("pdfjs-dist/legacy/build/pdf.worker.min.mjs");
+const onnxRuntimeDirectory = dirname(require.resolve("onnxruntime-web/webgpu"));
 const pageHtml = await readFile(resolve(dirname(fileURLToPath(import.meta.url)), "../index.html"), "utf8");
 const organizationLogoPath = resolve(dirname(fileURLToPath(import.meta.url)), "../public/RVB-logo.png");
 const styles = [
@@ -402,8 +403,8 @@ const styles = [
   }
   .speaker-label { border-radius: 3px 8px 8px 8px; }
   .speaker-0 { color: #154273; background: #8fcae7; }
-  .speaker-1 { color: #111; background: #76d2b6; }
-  .speaker-2 { color: #111; background: #e17000; }
+  .speaker-1 { color: #111; background: #e17000; }
+  .speaker-2 { color: #111; background: #76d2b6; }
   .speaker-3 { color: white; background: #007bc7; }
   .speaker-unknown { color: #353535; background: #e6e6e6; }
   .speaker-turn { border-color: #cccccc; border-radius: 3px 8px 8px 8px; background: white; }
@@ -424,7 +425,7 @@ const styles = [
     .workspace { padding: 13px; }
   }
 
-  .shell { width: min(100% - 48px, 1440px); }
+  .shell { display: flex; width: min(100% - 48px, 1440px); min-height: 100vh; flex-direction: column; }
   .page-header { display: flex; align-items: center; gap: 22px; padding: 18px 0; }
   .organization-logo { width: 130px; height: 72px; flex: none; object-fit: contain; }
   .page-titlebar {
@@ -462,9 +463,9 @@ const styles = [
   .privacy-copy p { margin: 4px 0 0; color: #353535; font-size: 11px; line-height: 1.45; }
   .privacy-facts { display: grid; gap: 5px; margin: 0; padding: 0; color: #154273; font-size: 10px; list-style: none; }
   .privacy-facts li::before { content: "✓"; margin-right: 7px; color: #007b65; font-weight: 700; }
-  .workspace { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-  .setup-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 16px; }
-  .setup-column { display: grid; grid-template-rows: auto auto; align-content: start; gap: 14px; }
+  .workspace { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .setup-grid { display: grid; min-height: 0; flex: 1 1 auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; gap: 16px; }
+  .setup-column { display: grid; min-height: 0; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 14px; }
   .setup-card, .recorder { min-width: 0; margin: 0; padding: 17px 19px; border: 1px solid #cccccc; border-top: 4px solid #154273; border-radius: 3px 11px 11px 11px; background: white; }
   .setup-card h2, .recorder h2 { color: #154273; font-size: 16px; letter-spacing: -.2px; }
   .section-description { margin: 5px 0 0; color: #535353; font-size: 11px; line-height: 1.45; }
@@ -504,7 +505,7 @@ const styles = [
   .document-file-row span { color: #007b65; }
   .remove-document-button { flex: none; padding: 5px 7px; border: 0; color: #535353; background: transparent; cursor: pointer; font-size: 10px; text-decoration: underline; }
   .document-status { min-height: 0; margin: 4px 0 0; font-size: 10px; line-height: 1.4; }
-  .recorder { display: flex; min-height: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 17px 19px; background: white; }
+  .recorder { display: flex; min-height: 0; height: 100%; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 17px 19px; background: white; }
   .device-label { margin-top: 14px; color: #154273; font-size: 11px; font-weight: 700; }
   .device-select { width: 100%; min-height: 36px; margin-top: 5px; padding: 7px 9px; border: 1px solid #999; border-radius: 3px 7px 7px 7px; color: #111; background: white; font-size: 12px; }
   .device-select:focus-visible { outline: 3px solid #8fcae7; outline-offset: 1px; }
@@ -530,7 +531,7 @@ const styles = [
   .progress-card, .result-card { margin-top: 16px; border-color: #cccccc; border-top: 4px solid #154273; border-radius: 3px 10px 10px 10px; background: white; }
   .progress-fill { background: #007bc7; }
   .error-message { border-color: #e17000; border-radius: 3px 8px 8px 8px; color: #111; background: #fff4e8; }
-  footer { justify-content: center; margin-top: 20px; padding: 14px 0 20px; border-top: 2px solid #154273; color: #154273; font-size: 13px; }
+  footer { justify-content: center; margin-top: auto; padding: 14px 0 20px; border-top: 2px solid #154273; color: #154273; font-size: 13px; }
   footer strong { margin-left: 4px; color: #007bc7; }
 
   @media (min-width: 761px) and (max-height: 820px) {
@@ -557,7 +558,7 @@ const styles = [
     .recording-actions { margin-top: 8px; }
     .transcribe-button { min-height: 36px; padding: 9px 14px; }
     .privacy-note { margin-top: 6px; }
-    footer { margin-top: 10px; padding: 7px 0 10px; }
+    footer { margin-top: auto; padding: 7px 0 10px; }
   }
 
   @media (min-width: 761px) and (max-height: 680px) {
@@ -604,7 +605,7 @@ const styles = [
     .transcribe-button { min-height: 30px; padding: 6px 10px; font-size: 11px; }
     .privacy-note { gap: 5px; margin-top: 4px; font-size: 9px; }
     .privacy-note svg { width: 12px; height: 12px; }
-    footer { margin-top: 7px; padding: 5px 0 7px; font-size: 11px; }
+    footer { margin-top: auto; padding: 5px 0 7px; font-size: 11px; }
   }
 
   @media (max-width: 900px) {
@@ -613,7 +614,10 @@ const styles = [
   }
 
   @media (max-width: 760px) {
-    .setup-grid { grid-template-columns: minmax(0, 1fr); }
+    .workspace { flex: 0 0 auto; }
+    .setup-grid { flex: 0 0 auto; grid-template-columns: minmax(0, 1fr); }
+    .setup-column { grid-template-rows: auto auto; }
+    .recorder { height: auto; }
   }
   @media (max-width: 600px) {
     .shell { width: min(100% - 28px, 1440px); }
@@ -640,6 +644,226 @@ const styles = [
     footer { flex-wrap: wrap; text-align: center; font-size: 11px; }
   }
   `,
+  String.raw`
+  /* Workshopscherm */
+  .session-titlebar { gap: 22px; }
+  .session-heading { min-width: 0; }
+  .session-date { margin: 0 0 3px; color: white; font-size: 12px; }
+  .session-titlebar h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .session-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 10px 18px; }
+  .session-titlebar .local-badge { padding: 0; border: 0; font-size: 12px; font-weight: 700; }
+  .session-recording-state { display: inline-flex; align-items: center; gap: 8px; color: white; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .session-recording-dot { width: 13px; height: 13px; border: 2px solid white; border-radius: 50%; background: #e17000; animation: session-pulse 1.6s ease-in-out infinite; }
+  .session-recording-state.is-paused .session-recording-dot { animation: none; background: #ffb612; }
+  .session-recording-state.is-stopped .session-recording-dot { animation: none; background: #76d2b6; }
+  @keyframes session-pulse { 50% { opacity: .45; } }
+  .session-button { min-height: 38px; padding: 8px 16px; border: 2px solid white; border-radius: 3px 9px 9px 9px; cursor: pointer; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .session-button:focus-visible { outline: 3px solid #8fcae7; outline-offset: 2px; }
+  .session-button:disabled { cursor: not-allowed; opacity: .6; }
+  .session-button-outline { color: white; background: transparent; }
+  .session-button-outline:not(:disabled):hover { background: rgba(255,255,255,.14); }
+  .session-button-solid { color: #154273; background: white; }
+  .session-button-solid:not(:disabled):hover { background: #e6e6e6; }
+
+  .session-view { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; margin-top: 4px; margin-bottom: 18px; }
+  .session-grid { display: grid; min-height: 0; flex: 1 1 auto; grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 16px 20px; }
+  .session-card { min-width: 0; border: 1px solid #cccccc; border-top: 4px solid #154273; border-radius: 3px 11px 11px 11px; background: white; }
+  .session-card h2 { color: #154273; font-size: 16px; letter-spacing: -.2px; }
+
+  .checklist-card { grid-column: 1; grid-row: 1; }
+  .session-card-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 15px 20px; border-bottom: 1px solid #e0e0e0; }
+  .topic-progress { display: flex; align-items: center; gap: 12px; color: #111; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .topic-progress-track { width: 140px; height: 7px; overflow: hidden; border-radius: 99px; background: #e6e6e6; }
+  .topic-progress-fill { width: 0; height: 100%; border-radius: inherit; background: #154273; transition: width .25s ease; }
+  .topic-list { margin: 0; padding: 0; list-style: none; }
+  .topic-item { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: start; gap: 16px; padding: 13px 20px; border-bottom: 1px solid #e0e0e0; }
+  .topic-item:last-child { border-bottom: 0; }
+  .topic-checkbox { width: 20px; height: 20px; margin: 1px 0 0; accent-color: #154273; cursor: pointer; }
+  .topic-checkbox:focus-visible { outline: 3px solid #8fcae7; outline-offset: 2px; }
+  .topic-copy { min-width: 0; }
+  .topic-title { display: block; color: #154273; cursor: pointer; font-size: 14px; font-weight: 700; }
+  .topic-description { margin: 4px 0 0; color: #535353; font-size: 11.5px; line-height: 1.45; }
+  .topic-item.is-discussed .topic-title { color: #535353; text-decoration: line-through; }
+  .topic-badge { padding: 4px 9px; border-radius: 3px 8px 8px 8px; color: #111; background: #e6e6e6; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .topic-badge.is-discussed { color: #154273; background: #8fcae7; }
+
+  .questions-card { grid-column: 1; grid-row: 2; padding: 15px 20px 16px; border-top-color: #007bc7; }
+  .questions-heading-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .generate-questions-button { flex: none; min-height: 38px; padding: 8px 18px; border: 0; border-radius: 3px 9px 9px 9px; color: white; background: #007bc7; cursor: pointer; font-size: 13px; font-weight: 700; }
+  .generate-questions-button:not(:disabled):hover { background: #00639f; }
+  .generate-questions-button:focus-visible { outline: 3px solid #8fcae7; outline-offset: 2px; }
+  .generate-questions-button:disabled { cursor: not-allowed; opacity: .5; }
+  .question-list { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+  .question-item { display: grid; grid-template-columns: 8px minmax(130px, 190px) minmax(0, 1fr); align-items: baseline; gap: 12px; font-size: 12px; line-height: 1.45; }
+  .question-item::before { content: ""; width: 7px; height: 7px; background: #154273; transform: translateY(-1px); }
+  .question-item strong { color: #154273; }
+  .question-text { color: #111; }
+  .question-text.is-empty { color: #757575; font-style: italic; }
+  .question-empty { color: #535353; font-size: 12px; }
+
+  .transcript-panel { display: flex; grid-column: 2; grid-row: 1 / span 2; min-height: 0; flex-direction: column; padding: 15px 20px; contain: size; }
+  .role-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0; }
+  .role-chips .speaker-label, .transcript-turn .speaker-label { padding: 4px 9px; font-size: 11px; }
+  .transcript-panel-body { min-height: 0; flex: 1 1 auto; margin-right: -12px; padding-right: 12px; overflow-y: auto; }
+  .live-placeholder { margin: 12px 0 0; color: #535353; font-size: 12px; line-height: 1.5; }
+  .model-status { margin: 10px 0 0; padding: 8px 10px; border-left: 3px solid #8fcae7; color: #353535; background: #f3f3f3; font-size: 11.5px; line-height: 1.45; font-variant-numeric: tabular-nums; }
+  .model-status.is-ready { border-left-color: #007b65; background: #eff8f5; }
+  .model-status.is-failed { border-left-color: #e17000; background: #fff4e8; }
+  .live-placeholder.is-live::after { content: ""; display: inline-block; width: 7px; height: 14px; margin-left: 4px; vertical-align: -2px; background: #353535; animation: caret-blink 1s steps(1) infinite; }
+  @keyframes caret-blink { 50% { opacity: 0; } }
+  .transcript-panel .progress-card { margin-top: 12px; padding: 12px; border-top-width: 1px; }
+  .transcript-panel .result-card { margin-top: 0; padding: 0; border: 0; }
+  .transcript-panel .transcript { gap: 0; margin-top: 0; }
+  .transcript-turn { padding: 11px 0; border-bottom: 1px solid #e0e0e0; }
+  .transcript-turn-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .transcript-turn .word-time { padding: 0; font-family: inherit; font-size: 11px; }
+  .transcript-turn .sentence-edit { min-height: 0; margin: 0 0 0 -7px; width: calc(100% + 7px); padding: 3px 6px; border-color: transparent; color: #111; background: transparent; font-size: 13px; line-height: 1.5; resize: none; field-sizing: content; }
+  .transcript-turn .sentence-edit:hover { border-color: #cccccc; }
+  .transcript-turn .sentence-edit:focus { border-color: #154273; background: white; }
+  .transcript-panel .result-meta { margin-top: 10px; }
+  .transcript-panel .result-actions { margin-top: 10px; padding-bottom: 4px; }
+  .speaker-turn-1 { border-left-color: #e17000; }
+  .speaker-turn-2 { border-left-color: #76d2b6; }
+
+  @media (min-width: 761px) and (max-height: 820px) {
+    .session-view { margin-bottom: 10px; }
+    .session-grid { gap: 12px 16px; }
+    .session-card-heading { padding: 10px 16px; }
+    .topic-item { padding: 9px 16px; }
+    .questions-card { padding: 10px 16px 12px; }
+    .question-list { margin-top: 8px; gap: 5px; }
+    .transcript-panel { padding: 10px 16px; }
+    .session-button, .generate-questions-button { min-height: 34px; padding: 6px 13px; }
+  }
+
+  @media (max-width: 1180px) {
+    .session-titlebar { flex-wrap: wrap; }
+    .session-controls { justify-content: flex-start; }
+  }
+
+  @media (max-width: 900px) {
+    .session-view { flex: 0 0 auto; }
+    .session-grid { flex: 0 0 auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+    .checklist-card, .questions-card, .transcript-panel { grid-column: 1; grid-row: auto; }
+    .transcript-panel { contain: none; }
+    .transcript-panel-body { max-height: 70vh; }
+  }
+
+  @media (max-width: 600px) {
+    .session-controls { width: 100%; gap: 8px 14px; }
+    .session-button { flex: 1 1 140px; }
+    .session-card-heading { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 14px; }
+    .topic-item { grid-template-columns: 22px minmax(0, 1fr); gap: 8px 12px; padding: 12px 14px; }
+    .topic-badge { grid-column: 2; justify-self: start; }
+    .questions-card { padding: 12px 14px; }
+    .questions-heading-row { flex-direction: column; }
+    .generate-questions-button { width: 100%; }
+    .question-item { grid-template-columns: 8px minmax(0, 1fr); gap: 2px 10px; }
+    .question-item .question-text { grid-column: 2; }
+    .transcript-panel { padding: 12px 14px; }
+  }
+  `,
+  String.raw`
+  /* Downloadscherm */
+  .download-view { display: flex; min-height: 0; flex: 1 1 auto; flex-direction: column; margin-top: 4px; margin-bottom: 18px; }
+  .download-banner { display: flex; align-items: center; gap: 14px; margin: 0 0 16px; padding: 10px 16px; border: 2px solid #154273; border-radius: 3px 12px 12px 12px; color: #111; background: white; font-size: 12.5px; line-height: 1.45; }
+  .download-banner strong { color: #154273; }
+  .download-banner-icon { display: grid; width: 34px; height: 34px; flex: none; place-items: center; border-radius: 3px 7px 7px 7px; color: white; background: #154273; }
+  .download-banner-icon svg { width: 19px; height: 19px; }
+  .download-grid { display: grid; min-height: 0; flex: 1 1 auto; grid-template-columns: minmax(0, 1.85fr) minmax(300px, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 16px 20px; }
+  .conversations-card { display: flex; grid-column: 1; grid-row: 1; min-height: 0; flex-direction: column; }
+  .conversations-card .session-card-heading { align-items: flex-start; }
+  .conversations-card h2:focus { outline: none; }
+  .select-all { display: inline-flex; flex: none; align-items: center; gap: 9px; color: #111; cursor: pointer; font-size: 13px; font-weight: 700; }
+  .select-all input, .conversation-checkbox, .usecase-checkbox { width: 20px; height: 20px; margin: 0; accent-color: #154273; cursor: pointer; }
+  .select-all input:disabled { cursor: not-allowed; }
+  .conversations-card .progress-card { margin: 14px 20px; padding: 12px; border-top-width: 1px; }
+  .conversations-card .result-card { min-height: 0; flex: 1 1 auto; margin: 0; padding: 0; overflow-y: auto; border: 0; }
+  @media (min-width: 901px) {
+    .conversations-card { min-height: 260px; contain: size; }
+  }
+  .conversations-card .result-meta { margin: 0; padding: 10px 20px 14px; }
+  .conversation-list { margin: 0; padding: 0; list-style: none; }
+  .conversation-item { display: grid; grid-template-columns: 20px 32px minmax(0, 1fr) auto; align-items: start; gap: 16px; padding: 14px 20px; border-bottom: 1px solid #e0e0e0; }
+  .conversation-checkbox { margin-top: 6px; }
+  .conversation-number { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 3px 8px 8px 8px; color: white; background: #154273; font-size: 13px; font-weight: 700; }
+  .conversation-body { min-width: 0; }
+  .conversation-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .conversation-title { margin: 0; color: #154273; font-size: 14.5px; }
+  .conversation-time { color: #535353; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .conversation-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .conversation-chips .speaker-label { padding: 3px 8px; font-size: 10.5px; }
+  .conversation-description { margin: 7px 0 0; color: #111; font-size: 12px; line-height: 1.45; }
+  .conversation-transcript { margin-top: 8px; padding: 2px 12px; border-left: 3px solid #8fcae7; background: #f7fbfd; }
+  .conversation-transcript .transcript-turn:last-child { border-bottom: 0; }
+  .conversation-empty { margin: 8px 0; color: #535353; font-size: 12px; }
+  .view-link { padding: 4px 2px; border: 0; color: #154273; background: transparent; cursor: pointer; font-size: 12.5px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .view-link:hover { color: #007bc7; }
+  .view-link:focus-visible { outline: 3px solid #8fcae7; outline-offset: 2px; }
+
+  .usecase-card { grid-column: 1; grid-row: 2; padding: 14px 20px; }
+  .usecase-row { display: grid; grid-template-columns: 20px 26px minmax(0, 1fr) auto; align-items: center; gap: 16px; }
+  .usecase-icon { width: 26px; height: 26px; color: #154273; }
+  .usecase-copy { min-width: 0; }
+  .usecase-copy .section-description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .usecase-preview { max-height: 260px; margin: 12px 0 0; padding: 10px 12px; overflow: auto; border: 1px solid #cccccc; border-radius: 3px 8px 8px 8px; color: #111; background: #f7f7f7; font: 11px/1.6 Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  .download-card { display: flex; grid-column: 2; grid-row: 1 / span 2; min-height: 0; flex-direction: column; padding: 15px 20px 14px; }
+  .download-options { display: grid; gap: 9px; margin: 14px 0 0; padding: 0; border: 0; }
+  .download-options legend { margin-bottom: 8px; padding: 0; color: #111; font-size: 13px; font-weight: 700; }
+  .download-option { display: flex; align-items: flex-start; gap: 12px; padding: 11px 14px; border: 1px solid #999999; border-radius: 3px 9px 9px 9px; background: white; cursor: pointer; }
+  .download-option:has(input:checked) { border: 2px solid #154273; padding: 10px 13px; background: #f3f3f3; }
+  .download-option:has(input:disabled) { cursor: not-allowed; opacity: .5; }
+  .download-option:has(input:focus-visible) { outline: 3px solid #8fcae7; outline-offset: 2px; }
+  .download-option input { width: 18px; height: 18px; flex: none; margin: 1px 0 0; accent-color: #154273; }
+  .download-option span { display: grid; gap: 3px; }
+  .download-option strong { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: #154273; font-size: 14px; }
+  .download-option small { color: #111; font-size: 11.5px; line-height: 1.4; }
+  .option-tag { padding: 2px 7px; border-radius: 3px 6px 6px 6px; color: #154273; background: #8fcae7; font-size: 10.5px; font-style: normal; }
+  .download-summary { display: grid; gap: 4px; margin-top: 14px; padding: 11px 14px; border-radius: 3px 9px 9px 9px; color: #111; background: #f3f3f3; font-size: 12px; overflow-wrap: anywhere; }
+  .download-summary strong { color: #154273; }
+  .download-button { display: flex; min-height: 48px; justify-content: center; align-items: center; gap: 12px; margin-top: auto; padding: 10px 18px; border: 0; border-radius: 3px 10px 10px 10px; color: white; background: #154273; cursor: pointer; font-size: 16px; font-weight: 700; }
+  .download-summary { margin-bottom: 16px; }
+  .download-button svg { width: 20px; height: 20px; }
+  .download-button:not(:disabled):hover { background: #10365f; }
+  .download-button:focus-visible { outline: 3px solid #8fcae7; outline-offset: 2px; }
+  .download-button:disabled { cursor: not-allowed; opacity: .55; }
+  .download-note { justify-content: center; align-items: center; margin-top: 10px; }
+
+  @media (min-width: 761px) and (max-height: 820px) {
+    .download-view { margin-bottom: 10px; }
+    .download-banner { margin-bottom: 10px; padding: 6px 12px; }
+    .download-banner-icon { width: 28px; height: 28px; }
+    .download-grid { gap: 12px 16px; }
+    .conversation-item { padding: 10px 16px; }
+    .usecase-card, .download-card { padding: 10px 16px; }
+    .download-options { margin-top: 8px; gap: 6px; }
+    .download-option { padding: 7px 12px; }
+    .download-option:has(input:checked) { padding: 6px 11px; }
+    .download-summary { margin-top: 10px; padding: 8px 12px; }
+    .download-button { min-height: 40px; }
+  }
+
+  @media (max-width: 900px) {
+    .download-view { flex: 0 0 auto; }
+    .download-grid { flex: 0 0 auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+    .conversations-card, .usecase-card, .download-card { grid-column: 1; grid-row: auto; }
+    .download-button { margin-top: 16px; }
+  }
+
+  @media (max-width: 600px) {
+    .session-heading { max-width: 100%; }
+    .session-titlebar h1 { white-space: normal; overflow-wrap: anywhere; }
+    .download-banner { align-items: flex-start; font-size: 11.5px; }
+    .conversations-card .session-card-heading { flex-direction: column; }
+    .conversation-item { grid-template-columns: 20px minmax(0, 1fr); gap: 8px 12px; padding: 12px 14px; }
+    .conversation-number { display: none; }
+    .conversation-item .view-link { grid-column: 2; justify-self: start; }
+    .usecase-card, .download-card { padding: 12px 14px; }
+    .usecase-row { grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; }
+    .usecase-icon { display: none; }
+  }
+  `,
   "",
 ].join("\n");
 const browserApp = [
@@ -664,8 +888,6 @@ const browserApp = [
   "const transcript = document.querySelector(\"#transcript\");\r",
   "const resultMeta = document.querySelector(\"#result-meta\");\r",
   "const errorMessage = document.querySelector(\"#error-message\");\r",
-  "const copyButton = document.querySelector(\"#copy-button\");\r",
-  "const downloadButton = document.querySelector(\"#download-button\");\r",
   "const speakerInputList = document.querySelector(\"#speaker-input-list\");\r",
   "const addSpeakerButton = document.querySelector(\"#add-speaker\");\r",
   "const contextDocumentInput = document.querySelector(\"#context-document\");\r",
@@ -898,11 +1120,6 @@ const browserApp = [
   "  contextMarkdownPreview.textContent = contextMarkdown;\r",
   "}\r",
   "\r",
-  "function markdownExport() {\r",
-  "  if (!contextMarkdown) return completedText;\r",
-  "  return `${completedText}\\n\\n---\\n\\n## Documentcontext: ${documentTitle(contextDocumentName)}\\n\\n${contextMarkdown}`.trim();\r",
-  "}\r",
-  "\r",
   "function documentTitle(fileName) {\r",
   "  return fileName.replace(/\\.[^.]+$/, \"\").replace(/[\\r\\n]+/g, \" \").trim() || \"Document\";\r",
   "}\r",
@@ -1027,76 +1244,11 @@ const browserApp = [
   "  }\r",
   "}\r",
   "\r",
-  "function renderTranscript() {\r",
-  "  transcript.replaceChildren();\r",
-  "  renderedSentences.forEach((sentence, sentenceIndex) => {\r",
-  "    const speakerLabel = speakerLabelFor(sentence.speaker);\r",
-  "    const sentenceRow = document.createElement(\"div\");\r",
-  "    sentenceRow.className = \"sentence-row\";\r",
-  "    const sentenceTime = document.createElement(\"span\");\r",
-  "    sentenceTime.className = \"word-time\";\r",
-  "    sentenceTime.textContent = `${sentence.words[0].start.toFixed(2)} – ${sentence.words[sentence.words.length - 1].end.toFixed(2)} s`;\r",
-  "    const text = document.createElement(\"div\");\r",
-  "    text.className = \"word-text\";\r",
-  "    const speaker = document.createElement(\"span\");\r",
-  "    speaker.className = sentence.speaker === null\r",
-  "      ? \"speaker-label speaker-unknown\"\r",
-  "      : `speaker-label speaker-${sentence.speaker % 4}`;\r",
-  "    speaker.textContent = speakerLabel;\r",
-  "    const sentenceEdit = document.createElement(\"textarea\");\r",
-  "    sentenceEdit.className = \"sentence-edit\";\r",
-  "    sentenceEdit.rows = 2;\r",
-  "    sentenceEdit.maxLength = 5000;\r",
-  "    sentenceEdit.setAttribute(\"aria-label\", `Zin ${sentenceIndex + 1} bewerken`);\r",
-  "    sentenceEdit.value = sentence.editedText ?? sentence.words.map((word) => word.text).join(\" \");\r",
-  "    sentenceEdit.addEventListener(\"input\", () => {\r",
-  "      sentence.editedText = sentenceEdit.value;\r",
-  "      completedText = transcriptText();\r",
-  "    });\r",
-  "    text.append(speaker, sentenceEdit);\r",
-  "    sentenceRow.append(sentenceTime, text);\r",
-  "    transcript.append(sentenceRow);\r",
-  "  });\r",
-  "  completedText = transcriptText();\r",
-  "}\r",
-  "\r",
-  "function renderResult(result) {\r",
-  "  renderedSentences = makeSentences(result.words);\r",
-  "  renderTranscript();\r",
-  "\r",
-  "  if (result.words.length === 0) {\r",
-  "    const empty = document.createElement(\"p\");\r",
-  "    empty.className = \"word-text\";\r",
-  "    empty.textContent = \"Er zijn geen woorden herkend.\";\r",
-  "    transcript.append(empty);\r",
-  "  }\r",
-  "\r",
-  "  resultMeta.textContent = `${result.speakerCount} ${result.speakerCount === 1 ? \"spreker\" : \"sprekers\"} herkend · ${result.words.length} woorden · ${result.duration.toFixed(1)} seconden audio · verwerkt in ${result.processingTime.toFixed(1)} seconden`;\r",
-  "  updateContextPreview();\r",
-  "  resultCard.hidden = false;\r",
-  "  resultCard.scrollIntoView({ behavior: \"smooth\", block: \"nearest\" });\r",
-  "}\r",
-  "\r",
   "async function diarizeTranscript(audio, result) {\r",
   "  setProgress({ stage: \"loading_speakers\", message: \"Who-model klaarmaken...\" });\r",
-  "  if (!whoPromise) {\r",
-  "    let lastProgress = -1;\r",
-  "    whoPromise = import(\"@desert-ant-labs/who\").then(({ Who }) => Who.load({\r",
-  "        accelerator: \"wasm\",\r",
-  "        litertWasmDir: new URL(\"./litert-wasm/\", document.baseURI).href,\r",
-  "        onProgress: (progress) => {\r",
-  "          const percent = Math.round(progress * 100);\r",
-  "          if (percent === lastProgress) return;\r",
-  "          lastProgress = percent;\r",
-  "          setProgress({\r",
-  "            stage: \"loading_speakers\",\r",
-  "            progress,\r",
-  "            message: progress < 1 ? \"Sprekermodel downloaden...\" : \"Sprekermodel initialiseren...\",\r",
-  "          });\r",
-  "        },\r",
-  "      }));\r",
-  "  }\r",
-  "  const who = await whoPromise;\r",
+  "  activeModelWait = \"who\";\r",
+  "  const who = await ensureWho();\r",
+  "  activeModelWait = null;\r",
   "  setProgress({ stage: \"diarizing\", message: \"Sprekers in de opname herkennen...\" });\r",
   "  const diarization = await who.diarize(audio);\r",
   "  const words = result.words.map((word) => {\r",
@@ -1129,28 +1281,9 @@ const browserApp = [
   "  progressIcon.classList.remove(\"complete-icon\");\r",
   "  setProgress({ stage: \"loading_model\", message: \"Voz-model klaarmaken...\" });\r",
   "  try {\r",
-  "    if (!vozPromise) {\r",
-  "      let lastProgress = -1;\r",
-  "      vozPromise = Promise.all([\r",
-  "        import(\"@desert-ant-labs/voz\"),\r",
-  "        import(\"onnxruntime-web/wasm\"),\r",
-  "      ]).then(([{ Voz }, ort]) => Voz.load({\r",
-  "        ort,\r",
-  "        ep: \"wasm\",\r",
-  "        webnn: false,\r",
-  "        onProgress: (progress) => {\r",
-  "          const percent = Math.round(progress * 100);\r",
-  "          if (percent === lastProgress) return;\r",
-  "          lastProgress = percent;\r",
-  "          setProgress({\r",
-  "            stage: \"loading_model\",\r",
-  "            progress,\r",
-  "            message: progress < 1 ? \"Voz-model downloaden...\" : \"Voz-model initialiseren...\",\r",
-  "          });\r",
-  "        },\r",
-  "      }));\r",
-  "    }\r",
-  "    const voz = await vozPromise;\r",
+  "    activeModelWait = \"voz\";\r",
+  "    const voz = await ensureVoz();\r",
+  "    activeModelWait = null;\r",
   "    setProgress({ stage: \"transcribing\", progress: 0, message: \"Audio wordt lokaal getranscribeerd...\" });\r",
   "    const transcriptResult = await voz.transcribe(audio, {\r",
   "      onProgress: (progress) => setProgress({\r",
@@ -1181,6 +1314,7 @@ const browserApp = [
   "    showError(`Transcriptie is niet gelukt: ${detail}`);\r",
   "  } finally {\r",
   "    setBusy(false);\r",
+  "    onSessionProcessingDone();\r",
   "  }\r",
   "}\r",
   "\r",
@@ -1273,6 +1407,10 @@ const browserApp = [
   "    sourceFrameCount = 0;\r",
   "    previousSample = 0;\r",
   "    processorNode.onaudioprocess = (event) => {\r",
+  "      if (isPaused) {\r",
+  "        event.outputBuffer.getChannelData(0).fill(0);\r",
+  "        return;\r",
+  "      }\r",
   "      const inputSamples = event.inputBuffer.getChannelData(0);\r",
   "      const outputSamples = new Float32Array(inputSamples.length);\r",
   "      for (let channel = 0; channel < event.inputBuffer.numberOfChannels; channel++) {\r",
@@ -1304,8 +1442,10 @@ const browserApp = [
   "    startButton.disabled = false;\r",
   "    stopButton.hidden = false;\r",
   "    recordingTimer = window.setInterval(() => {\r",
-  "      recordingTime.textContent = formatTime((Date.now() - recordingStartedAt) / 1000);\r",
+  "      recordingTime.textContent = formatTime(recordingElapsedSeconds());\r",
+  "      updateSessionClock();\r",
   "    }, 250);\r",
+  "    enterSessionView();\r",
   "  } catch (error) {\r",
   "    await stopTracks();\r",
   "    startButton.disabled = false;\r",
@@ -1334,6 +1474,7 @@ const browserApp = [
   "  if (!isRecording) return;\r",
   "  isRecording = false;\r",
   "  window.clearInterval(recordingTimer);\r",
+  "  onSessionRecordingStopped();\r",
   "  stopButton.disabled = true;\r",
   "  stopButton.querySelector(\"span\").textContent = \"Opname afronden...\";\r",
   "  recordingVisual.classList.remove(\"is-recording\");\r",
@@ -1349,7 +1490,7 @@ const browserApp = [
   "  try {\r",
   "    const audio = encodeWav();\r",
   "    await stopTracks();\r",
-  "    recordingTime.textContent = formatTime((Date.now() - recordingStartedAt) / 1000);\r",
+  "    recordingTime.textContent = formatTime(recordingElapsedSeconds());\r",
   "    recordingStatus.textContent = \"Opname klaar\";\r",
   "    recordingHint.textContent = \"Transcriptie wordt gestart...\";\r",
   "    stopButton.hidden = true;\r",
@@ -1363,6 +1504,7 @@ const browserApp = [
   "    stopButton.querySelector(\"span\").textContent = \"Stoppen en transcriberen\";\r",
   "    setBusy(false);\r",
   "    showError(error instanceof Error ? error.message : String(error));\r",
+  "    onSessionProcessingDone();\r",
   "  }\r",
   "}\r",
   "\r",
@@ -1443,25 +1585,6 @@ const browserApp = [
   "navigator.mediaDevices?.addEventListener(\"devicechange\", () => {\r",
   "  void refreshAudioInputs().catch((error) => showError(`Microfoons konden niet worden bijgewerkt: ${error instanceof Error ? error.message : String(error)}`));\r",
   "});\r",
-  "copyButton.addEventListener(\"click\", async () => {\r",
-  "  try {\r",
-  "    await navigator.clipboard.writeText(markdownExport());\r",
-  "    copyButton.textContent = \"Gekopieerd!\";\r",
-  "    window.setTimeout(() => { copyButton.textContent = \"Kopieer Markdown\"; }, 1600);\r",
-  "  } catch {\r",
-  "    showError(\"Kopiëren is niet gelukt. Selecteer de tekst en kopieer deze handmatig.\");\r",
-  "  }\r",
-  "});\r",
-  "downloadButton.addEventListener(\"click\", () => {\r",
-  "  const markdown = markdownExport();\r",
-  "  const baseName = (contextDocumentName || \"Transcriptie\").replace(/\\.[^.]+$/, \"\").replace(/[<>:\"/\\\\|?*\\u0000-\\u001f]/g, \"-\").trim() || \"Transcriptie\";\r",
-  "  const url = URL.createObjectURL(new Blob([markdown], { type: \"text/markdown;charset=utf-8\" }));\r",
-  "  const link = document.createElement(\"a\");\r",
-  "  link.href = url;\r",
-  "  link.download = `${baseName}.md`;\r",
-  "  link.click();\r",
-  "  window.setTimeout(() => URL.revokeObjectURL(url), 1000);\r",
-  "});\r",
   "contextDocumentInput.addEventListener(\"change\", () => {\r",
   "  const file = contextDocumentInput.files[0];\r",
   "  if (file) void convertContextDocument(file);\r",
@@ -1502,6 +1625,818 @@ const browserApp = [
   "  updateReadiness();\r",
   "  updateContextPreview();\r",
   "});\r",
+  // Workshopscherm (na "Workshop opnemen"). Geen template literals in dit blok: het staat in String.raw.
+  String.raw`
+const setupTitlebar = document.querySelector("#setup-titlebar");
+const sessionTitlebar = document.querySelector("#session-titlebar");
+const privacyBanner = document.querySelector("#privacy-banner");
+const setupView = document.querySelector("#setup-view");
+const sessionView = document.querySelector("#session-view");
+const sessionDate = document.querySelector("#session-date");
+const sessionTitle = document.querySelector("#session-title");
+const sessionRecordingState = document.querySelector("#session-recording-state");
+const sessionRecordingLabel = document.querySelector("#session-recording-label");
+const pauseButton = document.querySelector("#pause-recording");
+const finishButton = document.querySelector("#finish-session");
+const backToSetupButton = document.querySelector("#back-to-setup");
+const topicList = document.querySelector("#topic-list");
+const topicProgressText = document.querySelector("#topic-progress-text");
+const topicProgressTrack = document.querySelector("#topic-progress-track");
+const topicProgressFill = document.querySelector("#topic-progress-fill");
+const generateQuestionsButton = document.querySelector("#generate-questions");
+const questionList = document.querySelector("#question-list");
+const sessionRoleChips = document.querySelector("#session-role-chips");
+const livePlaceholder = document.querySelector("#live-placeholder");
+
+const sessionTopics = [
+  {
+    title: "Persoonsgegevens",
+    description: "Welke persoonsgegevens worden verwerkt en zijn er bijzondere persoonsgegevens bij?",
+    question: "Welke categorieën persoonsgegevens worden verwerkt, en zitten daar bijzondere persoonsgegevens tussen?",
+  },
+  {
+    title: "Gegevensverwerking",
+    description: "Hoe worden gegevens verzameld, opgeslagen, gedeeld en bewaard?",
+    question: "Hoe lang worden de gegevens bewaard en wat gebeurt ermee na afloop van die termijn?",
+  },
+  {
+    title: "Verwerkingsdoeleinden",
+    description: "Waarvoor worden de gegevens gebruikt en op welke grondslag?",
+    question: "Voor welk concreet doel worden de gegevens verwerkt, en op welke wettelijke grondslag rust dat?",
+  },
+  {
+    title: "Betrokken partijen",
+    description: "Wie is verwerkingsverantwoordelijke, wie is verwerker en wie ontvangt gegevens?",
+    question: "Welke externe partijen krijgen toegang tot de gegevens, en is er met hen een verwerkersovereenkomst?",
+  },
+  {
+    title: "Verwerkingslocaties",
+    description: "Waar worden gegevens opgeslagen en verwerkt, binnen of buiten de EU?",
+    question: "Worden gegevens buiten de EU opgeslagen of verwerkt, bijvoorbeeld door een cloudleverancier?",
+  },
+];
+
+let sessionStarted = false;
+let sessionFinished = false;
+let topicDiscussedAt = sessionTopics.map(() => null);
+let questionsGenerated = false;
+let isPaused = false;
+let pauseStartedAt = 0;
+let pausedTotal = 0;
+let recordingEndedAt = 0;
+
+function recordingElapsedSeconds() {
+  if (!recordingStartedAt) return 0;
+  const end = recordingEndedAt || (isPaused ? pauseStartedAt : Date.now());
+  return Math.max(0, (end - recordingStartedAt - pausedTotal) / 1000);
+}
+
+function formatClock(seconds) {
+  const total = Math.floor(seconds);
+  const pad = (value) => String(value).padStart(2, "0");
+  return pad(Math.floor(total / 3600)) + ":" + pad(Math.floor((total % 3600) / 60)) + ":" + pad(total % 60);
+}
+
+function updateSessionClock() {
+  const time = formatClock(recordingElapsedSeconds());
+  let label;
+  if (isRecording) label = (isPaused ? "Opname gepauzeerd · " : "Opname loopt · ") + time;
+  else if (sessionFinished) label = "Opname afgerond · " + time;
+  else label = "Opname afronden · " + time;
+  sessionRecordingLabel.textContent = label;
+  sessionRecordingState.classList.toggle("is-paused", isRecording && isPaused);
+  sessionRecordingState.classList.toggle("is-stopped", !isRecording);
+}
+
+function renderRoleChips() {
+  sessionRoleChips.replaceChildren();
+  speakerNames.forEach((name, index) => {
+    const chip = document.createElement("span");
+    chip.className = "speaker-label speaker-" + (index % 4);
+    chip.textContent = name;
+    sessionRoleChips.append(chip);
+  });
+  sessionRoleChips.hidden = speakerNames.length === 0;
+}
+
+function renderTopics() {
+  topicList.replaceChildren();
+  sessionTopics.forEach((topic, index) => {
+    const discussedAt = topicDiscussedAt[index];
+    const isDiscussed = discussedAt !== null;
+    const item = document.createElement("li");
+    item.className = isDiscussed ? "topic-item is-discussed" : "topic-item";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "topic-checkbox";
+    checkbox.id = "topic-" + index;
+    checkbox.checked = isDiscussed;
+    const descriptionId = "topic-description-" + index;
+    checkbox.setAttribute("aria-describedby", descriptionId);
+    checkbox.addEventListener("change", () => {
+      topicDiscussedAt[index] = checkbox.checked ? recordingElapsedSeconds() : null;
+      renderTopics();
+      document.getElementById("topic-" + index)?.focus();
+    });
+    const copy = document.createElement("div");
+    copy.className = "topic-copy";
+    const title = document.createElement("label");
+    title.className = "topic-title";
+    title.htmlFor = checkbox.id;
+    title.textContent = topic.title;
+    const description = document.createElement("p");
+    description.className = "topic-description";
+    description.id = descriptionId;
+    description.textContent = topic.description;
+    copy.append(title, description);
+    const badge = document.createElement("span");
+    badge.className = isDiscussed ? "topic-badge is-discussed" : "topic-badge";
+    badge.textContent = isDiscussed ? "✓ Besproken · " + formatTime(discussedAt) : "Nog te bespreken";
+    item.append(checkbox, copy, badge);
+    topicList.append(item);
+  });
+  const discussedCount = topicDiscussedAt.filter((value) => value !== null).length;
+  topicProgressText.textContent = discussedCount + " van " + sessionTopics.length + " besproken";
+  topicProgressTrack.setAttribute("aria-valuemax", String(sessionTopics.length));
+  topicProgressTrack.setAttribute("aria-valuenow", String(discussedCount));
+  topicProgressFill.style.width = (discussedCount / sessionTopics.length) * 100 + "%";
+  renderQuestions();
+}
+
+function renderQuestions() {
+  questionList.replaceChildren();
+  const openTopics = sessionTopics.filter((_topic, index) => topicDiscussedAt[index] === null);
+  generateQuestionsButton.disabled = openTopics.length === 0;
+  if (!openTopics.length) {
+    const done = document.createElement("li");
+    done.className = "question-empty";
+    done.textContent = "Alle onderwerpen zijn besproken.";
+    questionList.append(done);
+    return;
+  }
+  openTopics.forEach((topic) => {
+    const item = document.createElement("li");
+    item.className = "question-item";
+    const title = document.createElement("strong");
+    title.textContent = topic.title;
+    const question = document.createElement("span");
+    question.className = questionsGenerated ? "question-text" : "question-text is-empty";
+    question.textContent = questionsGenerated ? topic.question : "Nog geen vraag gegenereerd";
+    item.append(title, question);
+    questionList.append(item);
+  });
+}
+
+// --- Downloadscherm (na "Gesprek afronden") ---
+const downloadView = document.querySelector("#download-view");
+const conversationsSummary = document.querySelector("#conversations-summary");
+const conversationsHeading = document.querySelector("#conversations-heading");
+const selectAllConversations = document.querySelector("#select-all-conversations");
+const includeUsecase = document.querySelector("#include-usecase");
+const toggleUsecasePreview = document.querySelector("#toggle-usecase-preview");
+const usecasePreview = document.querySelector("#usecase-preview");
+const downloadSelection = document.querySelector("#download-selection");
+const downloadSummaryFiles = document.querySelector("#download-summary-files");
+const downloadFilesButton = document.querySelector("#download-files");
+const downloadButtonLabel = document.querySelector("#download-button-label");
+const separateOption = document.querySelector('input[name="download-split"][value="separate"]');
+
+const modelStatus = document.querySelector("#model-status");
+
+// --- Modellen laden: start al tijdens de opname, zodat het afronden niet hoeft te wachten ---
+let activeModelWait = null;
+let modelsPreloaded = false;
+
+function showModelProgress(name, progress) {
+  if (modelsPreloaded) return;
+  modelStatus.textContent = progress < 1
+    ? name + " wordt alvast gedownload: " + Math.round(progress * 100) + "%"
+    : name + " wordt klaargezet...";
+}
+
+function ensureVoz() {
+  if (!vozPromise) {
+    let lastProgress = -1;
+    vozPromise = Promise.all([
+      import("@desert-ant-labs/voz"),
+      import("onnxruntime-web/wasm"),
+    ]).then(([{ Voz }, ort]) => Voz.load({
+      ort,
+      ep: "wasm",
+      webnn: false,
+      onProgress: (progress) => {
+        const percent = Math.round(progress * 100);
+        if (percent === lastProgress) return;
+        lastProgress = percent;
+        showModelProgress("Spraakmodel", progress);
+        if (activeModelWait === "voz") {
+          setProgress({ stage: "loading_model", progress, message: progress < 1 ? "Voz-model downloaden..." : "Voz-model initialiseren..." });
+        }
+      },
+    }));
+  }
+  return vozPromise;
+}
+
+function ensureWho() {
+  if (!whoPromise) {
+    let lastProgress = -1;
+    whoPromise = import("@desert-ant-labs/who").then(({ Who }) => Who.load({
+      accelerator: "wasm",
+      litertWasmDir: new URL("./litert-wasm/", document.baseURI).href,
+      onProgress: (progress) => {
+        const percent = Math.round(progress * 100);
+        if (percent === lastProgress) return;
+        lastProgress = percent;
+        showModelProgress("Sprekermodel", progress);
+        if (activeModelWait === "who") {
+          setProgress({ stage: "loading_speakers", progress, message: progress < 1 ? "Sprekermodel downloaden..." : "Sprekermodel initialiseren..." });
+        }
+      },
+    }));
+  }
+  return whoPromise;
+}
+
+// Na elkaar laden (niet tegelijk), zodat de opname zo min mogelijk last heeft van het werk.
+function preloadModels() {
+  activeModelWait = null;
+  modelsPreloaded = false;
+  modelStatus.hidden = false;
+  modelStatus.classList.remove("is-ready", "is-failed");
+  modelStatus.textContent = "Spraakmodellen worden alvast geladen...";
+  ensureVoz()
+    .catch((error) => { vozPromise = undefined; throw error; })
+    .then(() => ensureWho().catch((error) => { whoPromise = undefined; throw error; }))
+    .then(() => {
+      modelsPreloaded = true;
+      modelStatus.classList.add("is-ready");
+      modelStatus.textContent = "✓ Spraakmodellen staan klaar. De transcriptie start direct na het afronden.";
+    })
+    .catch(() => {
+      modelStatus.classList.add("is-failed");
+      modelStatus.textContent = "De spraakmodellen konden niet vooraf worden geladen. Dit wordt opnieuw geprobeerd na het afronden.";
+    });
+}
+
+let conversations = [];
+let selectedConversations = new Set();
+let transcriptReady = false;
+let isDownloading = false;
+let workshopDate = new Date();
+let workshopTitle = "Workshop";
+
+function formatDuration(seconds) {
+  if (seconds < 60) return Math.max(0, Math.round(seconds)) + " sec";
+  return Math.round(seconds / 60) + " min";
+}
+
+function joinTitles(titles) {
+  if (titles.length <= 1) return titles[0] ?? "";
+  return titles.slice(0, -1).join(", ") + " en " + titles[titles.length - 1];
+}
+
+function sentenceText(sentence) {
+  return sentence.editedText ?? sentence.words.map((word) => word.text).join(" ");
+}
+
+function speakerChip(speaker) {
+  const chip = document.createElement("span");
+  chip.className = speaker === null ? "speaker-label speaker-unknown" : "speaker-label speaker-" + (speaker % 4);
+  chip.textContent = speakerLabelFor(speaker);
+  return chip;
+}
+
+function speakersIn(sentences) {
+  return [...new Set(sentences.map((sentence) => sentence.speaker))];
+}
+
+// Elk afgevinkt onderwerp sluit een gesprek af: van het vorige vinkje tot dit vinkje.
+// Onderwerpen die binnen 2 seconden na elkaar zijn afgevinkt, worden samengevoegd.
+function buildConversations() {
+  const totalSeconds = recordingElapsedSeconds();
+  const checked = sessionTopics
+    .map((topic, index) => ({ topic, at: topicDiscussedAt[index] }))
+    .filter((entry) => entry.at !== null)
+    .sort((a, b) => a.at - b.at);
+  const groups = [];
+  for (const entry of checked) {
+    const last = groups[groups.length - 1];
+    if (last && entry.at - last.end < 2) {
+      last.topics.push(entry.topic);
+      last.end = entry.at;
+    } else {
+      groups.push({ topics: [entry.topic], start: last ? last.end : 0, end: entry.at });
+    }
+  }
+  const result = groups.map((group) => ({
+    title: joinTitles(group.topics.map((topic) => topic.title)),
+    description: group.topics.map((topic) => topic.description).join(" "),
+    start: group.start,
+    end: group.end,
+    sentences: [],
+  }));
+  const lastEnd = groups.length ? groups[groups.length - 1].end : 0;
+  const rest = {
+    title: groups.length ? "Overige onderwerpen" : "Volledige workshop",
+    description: groups.length
+      ? "Wat er na het laatst afgevinkte onderwerp is besproken."
+      : "Er zijn geen onderwerpen afgevinkt; dit is het hele gesprek.",
+    start: lastEnd,
+    end: Math.max(totalSeconds, lastEnd),
+    sentences: [],
+  };
+  for (const sentence of renderedSentences) {
+    const time = sentence.words[0].start;
+    const target = result.find((conversation) => time >= conversation.start && time < conversation.end) ?? rest;
+    target.sentences.push(sentence);
+  }
+  if (rest.sentences.length || !result.length) result.push(rest);
+  return result;
+}
+
+function renderSentencesInto(container, sentences) {
+  container.replaceChildren();
+  if (!sentences.length) {
+    const empty = document.createElement("p");
+    empty.className = "conversation-empty";
+    empty.textContent = "In dit deel is geen tekst herkend.";
+    container.append(empty);
+    return;
+  }
+  let currentTurn;
+  let currentSpeaker;
+  sentences.forEach((sentence) => {
+    if (!currentTurn || sentence.speaker !== currentSpeaker) {
+      currentSpeaker = sentence.speaker;
+      currentTurn = document.createElement("div");
+      currentTurn.className = "transcript-turn";
+      const heading = document.createElement("div");
+      heading.className = "transcript-turn-heading";
+      const time = document.createElement("span");
+      time.className = "word-time";
+      time.textContent = formatTime(sentence.words[0].start);
+      heading.append(speakerChip(sentence.speaker), time);
+      currentTurn.append(heading);
+      container.append(currentTurn);
+    }
+    const sentenceEdit = document.createElement("textarea");
+    sentenceEdit.className = "sentence-edit";
+    sentenceEdit.rows = 1;
+    sentenceEdit.maxLength = 5000;
+    sentenceEdit.setAttribute("aria-label", "Zin " + (renderedSentences.indexOf(sentence) + 1) + " van " + speakerLabelFor(sentence.speaker) + " bewerken");
+    sentenceEdit.value = sentenceText(sentence);
+    sentenceEdit.addEventListener("input", () => {
+      sentence.editedText = sentenceEdit.value;
+      completedText = transcriptText();
+    });
+    currentTurn.append(sentenceEdit);
+  });
+}
+
+function renderConversations() {
+  transcript.replaceChildren();
+  conversations.forEach((conversation, index) => {
+    const item = document.createElement("li");
+    item.className = "conversation-item";
+    const titleId = "conversation-title-" + index;
+    const panelId = "conversation-panel-" + index;
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "conversation-checkbox";
+    checkbox.checked = selectedConversations.has(index);
+    checkbox.setAttribute("aria-labelledby", titleId);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedConversations.add(index);
+      else selectedConversations.delete(index);
+      updateDownloadPanel();
+    });
+
+    const number = document.createElement("span");
+    number.className = "conversation-number";
+    number.setAttribute("aria-hidden", "true");
+    number.textContent = String(index + 1);
+
+    const body = document.createElement("div");
+    body.className = "conversation-body";
+    const headingRow = document.createElement("div");
+    headingRow.className = "conversation-heading";
+    const title = document.createElement("h3");
+    title.className = "conversation-title";
+    title.id = titleId;
+    title.textContent = conversation.title;
+    const time = document.createElement("span");
+    time.className = "conversation-time";
+    time.textContent = formatTime(conversation.start) + " – " + formatTime(conversation.end) + " · " + formatDuration(conversation.end - conversation.start);
+    headingRow.append(title, time);
+    const chips = document.createElement("div");
+    chips.className = "conversation-chips";
+    speakersIn(conversation.sentences).forEach((speaker) => chips.append(speakerChip(speaker)));
+    const description = document.createElement("p");
+    description.className = "conversation-description";
+    description.textContent = conversation.description;
+    const panel = document.createElement("div");
+    panel.className = "conversation-transcript";
+    panel.id = panelId;
+    panel.hidden = true;
+    renderSentencesInto(panel, conversation.sentences);
+    body.append(headingRow);
+    if (chips.childElementCount) body.append(chips);
+    body.append(description, panel);
+
+    const viewButton = document.createElement("button");
+    viewButton.type = "button";
+    viewButton.className = "view-link";
+    viewButton.textContent = "Bekijk";
+    viewButton.setAttribute("aria-expanded", "false");
+    viewButton.setAttribute("aria-controls", panelId);
+    viewButton.setAttribute("aria-describedby", titleId);
+    viewButton.addEventListener("click", () => {
+      panel.hidden = !panel.hidden;
+      viewButton.textContent = panel.hidden ? "Bekijk" : "Verberg";
+      viewButton.setAttribute("aria-expanded", String(!panel.hidden));
+    });
+
+    item.append(checkbox, number, body, viewButton);
+    transcript.append(item);
+  });
+  conversationsSummary.textContent = conversations.length + (conversations.length === 1 ? " gesprek" : " gesprekken")
+    + " · totaal " + formatClock(recordingElapsedSeconds()) + " · selecteer welke u wilt meenemen";
+  updateDownloadPanel();
+}
+
+function renderResult(result) {
+  renderedSentences = makeSentences(result.words);
+  completedText = transcriptText();
+  conversations = buildConversations();
+  selectedConversations = new Set(conversations.map((_conversation, index) => index));
+  renderConversations();
+  resultMeta.textContent = result.speakerCount + " " + (result.speakerCount === 1 ? "spreker" : "sprekers") + " herkend · "
+    + result.words.length + " woorden · " + result.duration.toFixed(1) + " seconden audio · verwerkt in " + result.processingTime.toFixed(1) + " seconden";
+  resultCard.hidden = false;
+}
+
+function selectedConversationList() {
+  return conversations.filter((_conversation, index) => selectedConversations.has(index));
+}
+
+function usecaseSelected() {
+  return Boolean(contextMarkdown) && includeUsecase.checked;
+}
+
+function downloadFormat() {
+  return document.querySelector('input[name="download-format"]:checked').value;
+}
+
+function downloadSplit() {
+  return document.querySelector('input[name="download-split"]:checked').value;
+}
+
+function fileBaseName() {
+  const date = workshopDate.getFullYear() + "-" + String(workshopDate.getMonth() + 1).padStart(2, "0") + "-" + String(workshopDate.getDate()).padStart(2, "0");
+  return (workshopTitle + " " + date).replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-").replace(/\s+/g, "-");
+}
+
+function plannedFiles() {
+  const extension = downloadFormat() === "pdf" ? ".pdf" : ".md";
+  const hasConversations = selectedConversationList().length > 0;
+  const hasUsecase = usecaseSelected();
+  const baseName = fileBaseName();
+  if (!hasConversations && !hasUsecase) return [];
+  if (hasConversations && hasUsecase && downloadSplit() === "separate") {
+    return [
+      { name: baseName + "-gesprekken" + extension, conversations: true, usecase: false },
+      { name: baseName + "-use-case" + extension, conversations: false, usecase: true },
+    ];
+  }
+  return [{ name: baseName + extension, conversations: hasConversations, usecase: hasUsecase }];
+}
+
+function updateDownloadPanel() {
+  const count = selectedConversationList().length;
+  const hasUsecase = usecaseSelected();
+  const parts = [];
+  if (count) parts.push(count + (count === 1 ? " gesprek" : " gesprekken"));
+  if (hasUsecase) parts.push("1 use case-document");
+  downloadSelection.textContent = "Geselecteerd: " + (parts.length ? parts.join(" en ") : "niets");
+  selectAllConversations.disabled = conversations.length === 0;
+  selectAllConversations.checked = conversations.length > 0 && count === conversations.length;
+  selectAllConversations.indeterminate = count > 0 && count < conversations.length;
+  separateOption.disabled = !(count && hasUsecase);
+  const files = plannedFiles();
+  downloadSummaryFiles.textContent = files.length
+    ? files.map((file) => file.name).join(", ") + " · " + files.length + (files.length === 1 ? " bestand" : " bestanden")
+    : "Selecteer minstens één onderdeel.";
+  downloadFilesButton.disabled = !transcriptReady || isDownloading || files.length === 0;
+  if (!isDownloading) downloadButtonLabel.textContent = transcriptReady ? "Downloaden" : "Transcriptie wordt gemaakt...";
+}
+
+function headerBlocks(subtitle) {
+  const details = ["Datum: " + workshopDate.toLocaleDateString("nl-NL", { day: "2-digit", month: "2-digit", year: "numeric" })];
+  details.push("Duur opname: " + formatClock(recordingElapsedSeconds()));
+  if (speakerNames.length) details.push("Rollen: " + speakerNames.join(", "));
+  return [{ type: "h1", text: workshopTitle + subtitle }, { type: "meta", text: details.join(" · ") }];
+}
+
+function conversationBlocks(list) {
+  const blocks = [{ type: "h2", text: "Gesprekken" }];
+  list.forEach((conversation, index) => {
+    blocks.push({ type: "h3", text: (index + 1) + ". " + conversation.title });
+    const speakers = speakersIn(conversation.sentences).map(speakerLabelFor);
+    blocks.push({
+      type: "meta",
+      text: formatTime(conversation.start) + " – " + formatTime(conversation.end) + " · " + formatDuration(conversation.end - conversation.start)
+        + (speakers.length ? " · Sprekers: " + speakers.join(", ") : ""),
+    });
+    blocks.push({ type: "p", text: "Onderwerp: " + conversation.description });
+    if (!conversation.sentences.length) {
+      blocks.push({ type: "p", text: "In dit deel is geen tekst herkend." });
+      return;
+    }
+    let turn;
+    for (const sentence of conversation.sentences) {
+      if (turn && turn.speakerIndex === sentence.speaker) {
+        turn.text += " " + sentenceText(sentence);
+      } else {
+        turn = { type: "turn", speakerIndex: sentence.speaker, speaker: speakerLabelFor(sentence.speaker), time: formatTime(sentence.words[0].start), text: sentenceText(sentence) };
+        blocks.push(turn);
+      }
+    }
+  });
+  return blocks;
+}
+
+function usecaseBlocks() {
+  return [{ type: "h2", text: "Use case: " + documentTitle(contextDocumentName) }, { type: "markdown", text: contextMarkdown }];
+}
+
+function blocksToMarkdown(blocks) {
+  return blocks.map((block) => {
+    if (block.type === "h1") return "# " + block.text;
+    if (block.type === "h2") return "## " + block.text;
+    if (block.type === "h3") return "### " + block.text;
+    if (block.type === "turn") return "**" + block.speaker + "** (" + block.time + "): " + block.text;
+    if (block.type === "markdown") return block.text.replace(/^(#{1,4}) /gm, "##$1 ");
+    return block.text;
+  }).join("\n\n").trim() + "\n";
+}
+
+// De standaardlettertypen van jsPDF kennen alleen Latin-1; vervang de rest.
+function pdfSafe(text) {
+  return String(text)
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...")
+    .replace(/[•✓]/g, "-")
+    .replace(/[^\u0000-ÿ]/g, "?");
+}
+
+async function blocksToPdf(blocks) {
+  const { jsPDF } = await import("jspdf");
+  const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  const margin = 56;
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const width = pageWidth - margin * 2;
+  const blue = [21, 66, 115];
+  let y = margin;
+  const write = (text, options = {}) => {
+    const size = options.size ?? 10.5;
+    const lineHeight = size * 1.4;
+    const indent = options.indent ?? 0;
+    pdf.setFont("helvetica", options.style ?? "normal");
+    pdf.setFontSize(size);
+    const color = options.color ?? [17, 17, 17];
+    pdf.setTextColor(color[0], color[1], color[2]);
+    y += options.before ?? 0;
+    for (const line of pdf.splitTextToSize(pdfSafe(text), width - indent)) {
+      if (y + lineHeight > pageHeight - margin) {
+        pdf.addPage();
+        y = margin;
+      }
+      pdf.text(line, margin + indent, y + size);
+      y += lineHeight;
+    }
+    y += options.after ?? 4;
+  };
+  for (const block of blocks) {
+    if (block.type === "h1") write(block.text, { size: 20, style: "bold", color: blue, after: 6 });
+    else if (block.type === "h2") write(block.text, { size: 15, style: "bold", color: blue, before: 14, after: 6 });
+    else if (block.type === "h3") write(block.text, { size: 12.5, style: "bold", color: blue, before: 10, after: 2 });
+    else if (block.type === "meta") write(block.text, { size: 9.5, color: [83, 83, 83], after: 6 });
+    else if (block.type === "turn") {
+      write(block.speaker + "   " + block.time, { size: 9.5, style: "bold", color: blue, before: 4, after: 1 });
+      write(block.text, { after: 4 });
+    } else if (block.type === "markdown") {
+      for (const rawLine of block.text.split("\n")) {
+        const line = rawLine.replace(/\*\*|__|\x60/g, "").trimEnd();
+        const heading = line.match(/^(#{1,6})\s+(.*)$/);
+        if (!line.trim()) y += 4;
+        else if (heading) write(heading[2], { size: heading[1].length <= 1 ? 13 : 11.5, style: "bold", color: blue, before: 8, after: 2 });
+        else if (/^\s*[-*+]\s+/.test(line)) write("- " + line.replace(/^\s*[-*+]\s+/, ""), { indent: 10, after: 2 });
+        else if (/^\s*\|/.test(line)) {
+          if (!/^\s*\|[\s|:-]+\|\s*$/.test(line)) write(line.replace(/^\s*\|\s*|\s*\|\s*$/g, "").replace(/\s*\|\s*/g, "  |  "), { size: 9, after: 2 });
+        } else write(line, { after: 3 });
+      }
+    } else write(block.text, { after: 5 });
+  }
+  const pageCount = pdf.getNumberOfPages();
+  for (let page = 1; page <= pageCount; page++) {
+    pdf.setPage(page);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(83, 83, 83);
+    pdf.text(pdfSafe(workshopTitle + " · lokaal gemaakt"), margin, pageHeight - 28);
+    pdf.text("Pagina " + page + " van " + pageCount, pageWidth - margin, pageHeight - 28, { align: "right" });
+  }
+  return pdf.output("blob");
+}
+
+function saveBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function downloadFiles() {
+  const files = plannedFiles();
+  if (!files.length) return;
+  isDownloading = true;
+  downloadButtonLabel.textContent = "Bestanden maken...";
+  updateDownloadPanel();
+  try {
+    for (const [index, file] of files.entries()) {
+      const subtitle = file.conversations ? (file.usecase ? "" : " – gesprekken") : " – use case";
+      const blocks = headerBlocks(subtitle);
+      if (file.conversations) blocks.push(...conversationBlocks(selectedConversationList()));
+      if (file.usecase) blocks.push(...usecaseBlocks());
+      const blob = downloadFormat() === "pdf"
+        ? await blocksToPdf(blocks)
+        : new Blob([blocksToMarkdown(blocks)], { type: "text/markdown;charset=utf-8" });
+      saveBlob(blob, file.name);
+      if (index < files.length - 1) await new Promise((resolve) => window.setTimeout(resolve, 500));
+    }
+  } catch (error) {
+    showError("Downloaden is niet gelukt: " + (error instanceof Error ? error.message : String(error)));
+  } finally {
+    isDownloading = false;
+    updateDownloadPanel();
+  }
+}
+
+function enterSessionView() {
+  sessionStarted = true;
+  sessionFinished = false;
+  transcriptReady = false;
+  isPaused = false;
+  pausedTotal = 0;
+  recordingEndedAt = 0;
+  topicDiscussedAt = sessionTopics.map(() => null);
+  questionsGenerated = false;
+  conversations = [];
+  selectedConversations = new Set();
+  workshopDate = new Date();
+  workshopTitle = contextDocumentName ? documentTitle(contextDocumentName) : "Workshop";
+  sessionDate.textContent = workshopDate.toLocaleDateString("nl-NL", { day: "2-digit", month: "2-digit", year: "numeric" });
+  sessionTitle.textContent = workshopTitle;
+  renderRoleChips();
+  renderTopics();
+  sessionRecordingState.hidden = false;
+  pauseButton.hidden = false;
+  pauseButton.disabled = false;
+  pauseButton.textContent = "Pauzeer opname";
+  pauseButton.setAttribute("aria-pressed", "false");
+  finishButton.hidden = false;
+  finishButton.disabled = false;
+  backToSetupButton.hidden = true;
+  livePlaceholder.classList.add("is-live");
+  livePlaceholder.textContent = "Opname loopt. De transcriptie wordt gemaakt zodra u het gesprek afrondt.";
+  updateSessionClock();
+  preloadModels();
+  setupTitlebar.hidden = true;
+  privacyBanner.hidden = true;
+  setupView.hidden = true;
+  downloadView.hidden = true;
+  sessionTitlebar.hidden = false;
+  sessionView.hidden = false;
+  document.title = "Workshop · Voz Transcriber";
+  window.scrollTo(0, 0);
+  pauseButton.focus();
+}
+
+function showDownloadView() {
+  sessionTitle.textContent = "Workshop afgerond: downloaden";
+  sessionRecordingState.hidden = true;
+  pauseButton.hidden = true;
+  finishButton.hidden = true;
+  backToSetupButton.hidden = false;
+  backToSetupButton.disabled = true;
+  conversationsSummary.textContent = "De transcriptie wordt lokaal gemaakt...";
+  transcript.replaceChildren();
+  includeUsecase.checked = true;
+  usecasePreview.hidden = true;
+  toggleUsecasePreview.textContent = "Bekijk";
+  toggleUsecasePreview.setAttribute("aria-expanded", "false");
+  updateDownloadPanel();
+  sessionView.hidden = true;
+  downloadView.hidden = false;
+  document.title = "Workshop downloaden · Voz Transcriber";
+  window.scrollTo(0, 0);
+  conversationsHeading.tabIndex = -1;
+  conversationsHeading.focus();
+}
+
+function showSetupView() {
+  sessionView.hidden = true;
+  downloadView.hidden = true;
+  sessionTitlebar.hidden = true;
+  setupTitlebar.hidden = false;
+  privacyBanner.hidden = false;
+  setupView.hidden = false;
+  errorMessage.hidden = true;
+  recordingTime.textContent = "00:00";
+  document.title = "Workshop voorbereiden · Voz Transcriber";
+  window.scrollTo(0, 0);
+  startButton.focus();
+}
+
+function togglePause() {
+  if (!isRecording) return;
+  if (isPaused) {
+    pausedTotal += Date.now() - pauseStartedAt;
+    isPaused = false;
+  } else {
+    pauseStartedAt = Date.now();
+    isPaused = true;
+  }
+  pauseButton.textContent = isPaused ? "Hervat opname" : "Pauzeer opname";
+  pauseButton.setAttribute("aria-pressed", String(isPaused));
+  livePlaceholder.classList.toggle("is-live", !isPaused);
+  livePlaceholder.textContent = isPaused
+    ? "Opname gepauzeerd. Er wordt nu niets opgenomen."
+    : "Opname loopt. De transcriptie wordt gemaakt zodra u het gesprek afrondt.";
+  setAudioLevel(0);
+  updateSessionClock();
+}
+
+function onSessionRecordingStopped() {
+  if (isPaused) {
+    pausedTotal += Date.now() - pauseStartedAt;
+    isPaused = false;
+  }
+  recordingEndedAt = Date.now();
+  updateSessionClock();
+  showDownloadView();
+}
+
+function onSessionProcessingDone() {
+  if (!sessionStarted) return;
+  sessionFinished = true;
+  transcriptReady = true;
+  backToSetupButton.disabled = false;
+  if (!resultCard.hidden) progressCard.hidden = true;
+  if (resultCard.hidden) {
+    conversations = [];
+    selectedConversations = new Set();
+    conversationsSummary.textContent = contextMarkdown
+      ? "Er is geen transcriptie beschikbaar. U kunt alleen het use case-document downloaden."
+      : "Er is geen transcriptie beschikbaar.";
+  }
+  updateDownloadPanel();
+}
+
+pauseButton.addEventListener("click", togglePause);
+finishButton.addEventListener("click", () => { void stopRecording(); });
+backToSetupButton.addEventListener("click", showSetupView);
+generateQuestionsButton.addEventListener("click", () => {
+  questionsGenerated = true;
+  renderQuestions();
+});
+selectAllConversations.addEventListener("change", () => {
+  selectedConversations = selectAllConversations.checked
+    ? new Set(conversations.map((_conversation, index) => index))
+    : new Set();
+  transcript.querySelectorAll(".conversation-checkbox").forEach((checkbox) => {
+    checkbox.checked = selectAllConversations.checked;
+  });
+  updateDownloadPanel();
+});
+includeUsecase.addEventListener("change", updateDownloadPanel);
+document.querySelectorAll('input[name="download-format"], input[name="download-split"]').forEach((radio) => {
+  radio.addEventListener("change", updateDownloadPanel);
+});
+toggleUsecasePreview.addEventListener("click", () => {
+  usecasePreview.hidden = !usecasePreview.hidden;
+  toggleUsecasePreview.textContent = usecasePreview.hidden ? "Bekijk" : "Verberg";
+  toggleUsecasePreview.setAttribute("aria-expanded", String(!usecasePreview.hidden));
+});
+downloadFilesButton.addEventListener("click", () => { void downloadFiles(); });
+`,
   "",
 ].join("\n");
 const jobs = new Map<string, Job>();
@@ -1682,6 +2617,37 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
     return;
   }
 
+  if (request.method === "GET" && url.pathname.endsWith("/VozWeb.wasm")) {
+    const wasm = await readFile(vozWasmPath);
+    response.writeHead(200, {
+      "Content-Type": "application/wasm",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+    });
+    response.end(wasm);
+    return;
+  }
+
+  const onnxRuntimeFileMatch = request.method === "GET"
+    && url.pathname.match(/^\/(ort-wasm-[a-z0-9.-]+\.(?:mjs|wasm))$/i);
+  if (onnxRuntimeFileMatch) {
+    const fileName = onnxRuntimeFileMatch[1];
+    let content: Buffer;
+    try {
+      content = await readFile(join(onnxRuntimeDirectory, fileName));
+    } catch {
+      sendJson(response, 404, { error: "Bestand niet gevonden." });
+      return;
+    }
+    response.writeHead(200, {
+      "Content-Type": fileName.endsWith(".wasm") ? "application/wasm" : "text/javascript; charset=utf-8",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+    });
+    response.end(content);
+    return;
+  }
+
   const litertFileMatch = request.method === "GET"
     && url.pathname.match(/^\/litert-wasm\/(litert_wasm_(?:compat_|threaded_|jspi_)?internal\.(?:js|wasm))$/);
   if (litertFileMatch) {
@@ -1796,6 +2762,7 @@ async function buildBrowserBundle(): Promise<string> {
     },
     bundle: true,
     format: "esm",
+    external: ["canvg", "dompurify", "html2canvas"],
     platform: "browser",
     target: "es2022",
     write: false,
@@ -1829,7 +2796,7 @@ async function buildPages(): Promise<void> {
   await copyFile(vozWasmPath, join(outputDirectory, "VozWeb.wasm"));
   await copyFile(pdfWorkerPath, join(outputDirectory, "pdf.worker.mjs"));
 
-  const onnxRuntimeDirectory = dirname(require.resolve("onnxruntime-web/webgpu"));
+
   const onnxRuntimeFiles = await readdir(onnxRuntimeDirectory);
   for (const fileName of onnxRuntimeFiles) {
     if (/^ort-wasm-.*\.(?:mjs|wasm)$/.test(fileName)) {

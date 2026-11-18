@@ -12,7 +12,7 @@
     <main class="shell">
       <header class="page-header">
         <img class="organization-logo" src="./RVB-logo.png" alt="Rijksvastgoedbedrijf, Ministerie van Binnenlandse Zaken en Koninkrijksrelaties">
-        <div class="page-titlebar">
+        <div class="page-titlebar" id="setup-titlebar">
           <div>
             <p class="page-kicker">VOZ TRANSCRIBER</p>
             <h1>Workshop voorbereiden</h1>
@@ -25,9 +25,31 @@
             Werkt lokaal op deze laptop
           </span>
         </div>
+        <div class="page-titlebar session-titlebar" id="session-titlebar" hidden>
+          <div class="session-heading">
+            <p class="session-date" id="session-date"></p>
+            <h1 id="session-title">Workshop</h1>
+          </div>
+          <div class="session-controls">
+            <span class="local-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="4" y="11" width="16" height="10"/>
+                <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+              </svg>
+              Werkt lokaal op deze laptop
+            </span>
+            <span class="session-recording-state" id="session-recording-state">
+              <span class="session-recording-dot" aria-hidden="true"></span>
+              <span id="session-recording-label">Opname loopt · 00:00:00</span>
+            </span>
+            <button class="session-button session-button-outline" id="pause-recording" type="button" aria-pressed="false">Pauzeer opname</button>
+            <button class="session-button session-button-solid" id="finish-session" type="button">Gesprek afronden</button>
+            <button class="session-button session-button-outline" id="back-to-setup" type="button" hidden>Nieuwe workshop</button>
+          </div>
+        </div>
       </header>
 
-      <section class="privacy-banner" aria-label="Privacy en lokale verwerking">
+      <section class="privacy-banner" id="privacy-banner" aria-label="Privacy en lokale verwerking">
         <span class="privacy-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="4" y="11" width="16" height="10"/>
@@ -44,7 +66,7 @@
         </ul>
       </section>
 
-      <section class="workspace" aria-label="Audio transcriberen">
+      <section class="workspace" id="setup-view" aria-label="Workshop voorbereiden">
         <div class="setup-grid">
           <div class="setup-column">
             <section class="setup-card role-card" aria-labelledby="roles-heading">
@@ -120,40 +142,146 @@
             </p>
           </section>
         </div>
-
-        <section class="progress-card" id="progress-card" aria-live="polite" hidden>
-          <div class="progress-heading">
-            <div class="progress-icon" id="progress-icon" aria-hidden="true"><span class="spinner"></span></div>
-            <div class="progress-text">
-              <p class="progress-label" id="progress-label">Klaarmaken</p>
-              <p class="progress-detail" id="progress-detail">Even geduld...</p>
-            </div>
-            <span class="progress-percent" id="progress-percent"></span>
-          </div>
-          <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-        </section>
-
-        <section class="result-card" id="result-card" hidden>
-          <div class="result-heading">
-            <div>
-              <p class="eyebrow">RESULTAAT</p>
-              <h2>Transcriptie</h2>
-            </div>
-            <div class="result-actions">
-              <button class="copy-button" id="copy-button" type="button">Kopieer Markdown</button>
-              <button class="copy-button" id="download-button" type="button">Download .md</button>
-            </div>
-          </div>
-          <div class="transcript" id="transcript"></div>
-          <details class="context-preview" id="context-preview" hidden>
-            <summary>Documentcontext: <span id="context-file-name"></span></summary>
-            <pre id="context-markdown-preview"></pre>
-          </details>
-          <p class="result-meta" id="result-meta"></p>
-        </section>
-
-        <p class="error-message" id="error-message" role="alert" hidden></p>
       </section>
+
+      <section class="session-view" id="session-view" aria-label="Workshop" hidden>
+        <div class="session-grid">
+          <section class="session-card checklist-card" aria-labelledby="checklist-heading">
+            <div class="session-card-heading">
+              <h2 id="checklist-heading">Checklist onderwerpen</h2>
+              <div class="topic-progress">
+                <span id="topic-progress-text">0 van 5 besproken</span>
+                <div class="topic-progress-track" id="topic-progress-track" role="progressbar" aria-label="Besproken onderwerpen" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+                  <div class="topic-progress-fill" id="topic-progress-fill"></div>
+                </div>
+              </div>
+            </div>
+            <ul class="topic-list" id="topic-list"></ul>
+          </section>
+
+          <section class="session-card questions-card" aria-labelledby="questions-heading">
+            <div class="questions-heading-row">
+              <div>
+                <h2 id="questions-heading">Vragen voor de volgende onderwerpen</h2>
+                <p class="section-description">Voorgestelde vragen voor de onderwerpen die nog open staan.</p>
+              </div>
+              <button class="generate-questions-button" id="generate-questions" type="button">Genereer vragen</button>
+            </div>
+            <ul class="question-list" id="question-list" aria-live="polite"></ul>
+          </section>
+
+          <section class="session-card transcript-panel" aria-labelledby="transcript-heading">
+            <h2 id="transcript-heading">Transcriptie</h2>
+            <div class="role-chips" id="session-role-chips"></div>
+            <div class="transcript-panel-body">
+              <p class="live-placeholder is-live" id="live-placeholder">Opname loopt. De transcriptie verschijnt zodra u het gesprek afrondt.</p>
+              <p class="model-status" id="model-status" aria-live="polite" hidden></p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="download-view" id="download-view" aria-label="Workshop downloaden" hidden>
+        <p class="download-banner">
+          <span class="download-banner-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          </span>
+          <span><strong>Uw bestanden worden op deze laptop gemaakt.</strong> Er wordt niets verstuurd of geüpload. U bepaalt zelf waar u ze bewaart.</span>
+        </p>
+
+        <div class="download-grid">
+          <section class="session-card conversations-card" aria-labelledby="conversations-heading">
+            <div class="session-card-heading">
+              <div>
+                <h2 id="conversations-heading">Gesprekken uit de workshop</h2>
+                <p class="section-description" id="conversations-summary">Transcriptie wordt gemaakt...</p>
+              </div>
+              <label class="select-all" for="select-all-conversations">
+                <input id="select-all-conversations" type="checkbox" checked disabled>
+                <span>Alles selecteren</span>
+              </label>
+            </div>
+
+            <section class="progress-card" id="progress-card" aria-live="polite" hidden>
+                <div class="progress-heading">
+                  <div class="progress-icon" id="progress-icon" aria-hidden="true"><span class="spinner"></span></div>
+                  <div class="progress-text">
+                    <p class="progress-label" id="progress-label">Klaarmaken</p>
+                    <p class="progress-detail" id="progress-detail">Even geduld...</p>
+                  </div>
+                  <span class="progress-percent" id="progress-percent"></span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+              </section>
+
+            <div class="result-card" id="result-card" hidden>
+              <ul class="conversation-list" id="transcript"></ul>
+              <p class="result-meta" id="result-meta"></p>
+            </div>
+          </section>
+
+          <section class="session-card usecase-card" id="context-preview" aria-labelledby="usecase-heading" hidden>
+            <div class="usecase-row">
+              <input class="usecase-checkbox" id="include-usecase" type="checkbox" checked aria-labelledby="usecase-heading">
+              <svg class="usecase-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 3v5h5"/>
+              </svg>
+              <div class="usecase-copy">
+                <h2 id="usecase-heading">Use case of AI-initiatief</h2>
+                <p class="section-description"><span id="context-file-name"></span> · toegevoegd bij de voorbereiding</p>
+              </div>
+              <button class="view-link" id="toggle-usecase-preview" type="button" aria-expanded="false" aria-controls="usecase-preview">Bekijk</button>
+            </div>
+            <pre class="usecase-preview" id="usecase-preview" hidden><code id="context-markdown-preview"></code></pre>
+          </section>
+
+          <section class="session-card download-card" aria-labelledby="download-heading">
+            <h2 id="download-heading">Downloaden</h2>
+            <p class="section-description" id="download-selection">Geselecteerd: niets</p>
+
+            <fieldset class="download-options">
+              <legend>1 · Kies een bestandstype</legend>
+              <label class="download-option">
+                <input type="radio" name="download-format" value="pdf" checked>
+                <span><strong>PDF</strong><small>Om te lezen, te printen en te delen.</small></span>
+              </label>
+              <label class="download-option">
+                <input type="radio" name="download-format" value="md">
+                <span><strong>Markdown (.md) <em class="option-tag">Machinevriendelijk</em></strong><small>Speciaal voor de volgende stap: de DPIA-generator.</small></span>
+              </label>
+            </fieldset>
+
+            <fieldset class="download-options">
+              <legend>2 · Samen of apart?</legend>
+              <label class="download-option">
+                <input type="radio" name="download-split" value="together" checked>
+                <span><strong>Samen in één bestand</strong><small>Gesprekken en use case in één document.</small></span>
+              </label>
+              <label class="download-option">
+                <input type="radio" name="download-split" value="separate">
+                <span><strong>Apart van elkaar</strong><small>Twee bestanden: de gesprekken en de use case.</small></span>
+              </label>
+            </fieldset>
+
+            <div class="download-summary" aria-live="polite">
+              <strong>Dit wordt gedownload:</strong>
+              <span id="download-summary-files">-</span>
+            </div>
+
+            <button class="download-button" id="download-files" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+              <span id="download-button-label">Downloaden</span>
+            </button>
+            <p class="privacy-note download-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              <span>Het bestand wordt lokaal op deze laptop opgeslagen.</span>
+            </p>
+          </section>
+        </div>
+      </section>
+
+      <p class="error-message" id="error-message" role="alert" hidden></p>
 
       <footer>Wij zijn het Rijksvastgoedbedrijf. <strong>Voor een beter Nederland.</strong></footer>
     </main>
