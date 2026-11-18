@@ -533,11 +533,87 @@ const styles = [
   footer { justify-content: center; margin-top: 20px; padding: 14px 0 20px; border-top: 2px solid #154273; color: #154273; font-size: 13px; }
   footer strong { margin-left: 4px; color: #007bc7; }
 
+  @media (min-width: 761px) and (max-height: 820px) {
+    .page-header { padding: 8px 0; }
+    .organization-logo { width: 100px; height: 56px; }
+    .page-titlebar { min-height: 58px; padding: 8px 16px; }
+    .page-titlebar h1 { font-size: 27px; }
+    .privacy-banner { gap: 12px; margin-bottom: 10px; padding: 8px 14px; }
+    .privacy-icon { width: 34px; height: 34px; }
+    .setup-grid { gap: 12px; }
+    .setup-column { gap: 10px; }
+    .setup-card, .recorder { padding: 10px 14px; }
+    .speaker-input-list { gap: 5px; margin-top: 8px; }
+    .speaker-input { min-height: 29px; padding: 4px 7px; }
+    .remove-speaker-button { width: 26px; height: 26px; }
+    .role-card > .setup-action-button { margin-top: 8px; }
+    .document-dropzone { min-height: 64px; gap: 9px; margin-top: 8px; padding: 8px; }
+    .device-label { margin-top: 8px; }
+    .device-select { min-height: 32px; margin-top: 3px; padding: 5px 8px; }
+    .audio-level-row { margin-top: 5px; }
+    .capture-option { margin-top: 6px; padding: 7px; }
+    .ready-checklist { gap: 3px; margin-top: 7px; padding: 7px 9px; }
+    .recording-status-row { margin-top: 8px; }
+    .recording-actions { margin-top: 8px; }
+    .transcribe-button { min-height: 36px; padding: 9px 14px; }
+    .privacy-note { margin-top: 6px; }
+    footer { margin-top: 10px; padding: 7px 0 10px; }
+  }
+
+  @media (min-width: 761px) and (max-height: 680px) {
+    .page-header { padding: 4px 0; }
+    .organization-logo { width: 76px; height: 42px; }
+    .page-titlebar { min-height: 46px; }
+    .page-titlebar h1 { font-size: 23px; }
+    .page-kicker { margin-bottom: 2px; font-size: 8px; }
+    .privacy-banner { grid-template-columns: 28px minmax(0, 1fr) auto; gap: 8px; margin-bottom: 7px; padding: 6px 10px; }
+    .privacy-icon { width: 28px; height: 28px; }
+    .privacy-icon svg { width: 17px; height: 17px; }
+    .privacy-copy h2 { font-size: 13px; }
+    .privacy-copy p { margin-top: 2px; font-size: 9px; }
+    .privacy-facts { gap: 3px; font-size: 9px; }
+    .setup-grid { gap: 9px; }
+    .setup-column { gap: 7px; }
+    .setup-card, .recorder { padding: 7px 10px; }
+    .setup-card h2, .recorder h2 { font-size: 14px; }
+    .section-description { margin-top: 3px; font-size: 10px; }
+    .speaker-input-list { gap: 3px; margin-top: 5px; }
+    .speaker-input-row { gap: 5px; }
+    .speaker-input { min-height: 26px; padding: 3px 6px; font-size: 10px; }
+    .remove-speaker-button { width: 23px; height: 23px; }
+    .role-card > .setup-action-button { min-height: 28px; margin-top: 5px; padding: 4px 8px; }
+    .document-dropzone { min-height: 48px; gap: 6px; margin-top: 5px; padding: 5px 7px; }
+    .document-dropzone > svg { width: 21px; height: 21px; }
+    .dropzone-copy { gap: 2px; font-size: 10px; }
+    .dropzone-copy span { font-size: 9px; }
+    .document-pick-button { min-height: 28px; padding: 5px 8px; font-size: 10px; }
+    .document-status { font-size: 9px; }
+    .device-label { margin-top: 5px; font-size: 10px; }
+    .device-select { min-height: 28px; margin-top: 2px; padding: 3px 6px; font-size: 10px; }
+    .audio-level-row { margin-top: 2px; font-size: 9px; }
+    .recording-visual { height: 20px; }
+    .capture-option { gap: 6px; margin-top: 3px; padding: 5px 7px; }
+    .capture-option strong, .capture-option small { font-size: 9px; }
+    .ready-checklist { gap: 2px; margin-top: 4px; padding: 5px 7px; font-size: 9px; }
+    .ready-checklist strong { font-size: 10px; }
+    .recording-status-row { margin-top: 5px; }
+    .recording-status { font-size: 10px; }
+    .recording-time { font-size: 15px; }
+    .recording-hint { margin-top: 3px; font-size: 9px; }
+    .recording-actions { margin-top: 5px; }
+    .transcribe-button { min-height: 30px; padding: 6px 10px; font-size: 11px; }
+    .privacy-note { gap: 5px; margin-top: 4px; font-size: 9px; }
+    .privacy-note svg { width: 12px; height: 12px; }
+    footer { margin-top: 7px; padding: 5px 0 7px; font-size: 11px; }
+  }
+
   @media (max-width: 900px) {
-    .setup-grid { grid-template-columns: minmax(0, 1fr); }
-    .setup-column { grid-template-rows: auto auto; }
     .privacy-banner { grid-template-columns: 40px minmax(0, 1fr); }
     .privacy-facts { grid-column: 2; grid-template-columns: repeat(2, max-content); }
+  }
+
+  @media (max-width: 760px) {
+    .setup-grid { grid-template-columns: minmax(0, 1fr); }
   }
   @media (max-width: 600px) {
     .shell { width: min(100% - 28px, 1440px); }
