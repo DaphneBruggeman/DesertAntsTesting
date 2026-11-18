@@ -3,87 +3,127 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f1f7fd">
-    <title>Voz Transcriber</title>
+    <meta name="theme-color" content="#154273">
+    <title>Workshop voorbereiden · Voz Transcriber</title>
     <link rel="stylesheet" href="./styles.css">
     <script type="module" src="./app.js"></script>
   </head>
   <body>
     <main class="shell">
-      <header class="topbar">
-        <a class="brand" href="./" aria-label="Voz Transcriber startpagina">
-          <span class="brand-mark" aria-hidden="true">v</span>
-          <span>voz<span class="brand-light">/transcriber</span></span>
-        </a>
-        <span class="local-badge"><span class="live-dot"></span> Lokaal op je computer</span>
+      <header class="page-header">
+        <img class="organization-logo" src="./RVB-logo.png" alt="Rijksvastgoedbedrijf, Ministerie van Binnenlandse Zaken en Koninkrijksrelaties">
+        <div class="page-titlebar">
+          <div>
+            <p class="page-kicker">VOZ TRANSCRIBER</p>
+            <h1>Workshop voorbereiden</h1>
+          </div>
+          <span class="local-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="4" y="11" width="16" height="10"/>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+            </svg>
+            Werkt lokaal op deze laptop
+          </span>
+        </div>
       </header>
 
-      <section class="intro">
-        <p class="eyebrow">AUDIO NAAR TEKST</p>
-        <h1>Onze workshop,<br><span>helder in beeld.</span></h1>
-        <p class="intro-copy">Neem je stem op met de microfoon en desgewenst ook computergeluid. Voz herkent de woorden en Who zoekt uit wie wanneer sprak. Beide modellen draaien lokaal.</p>
+      <section class="privacy-banner" aria-label="Privacy en lokale verwerking">
+        <span class="privacy-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="11" width="16" height="10"/>
+            <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+          </svg>
+        </span>
+        <div class="privacy-copy">
+          <h2>Uw opname blijft op deze laptop</h2>
+          <p>Audio, transcriptie en document worden lokaal verwerkt. Voor de eerste keer worden modellen gedownload; Who kan gebruiksmetadata versturen.</p>
+        </div>
+        <ul class="privacy-facts">
+          <li>Audio wordt lokaal verwerkt</li>
+          <li>Document wordt lokaal verwerkt</li>
+        </ul>
       </section>
 
       <section class="workspace" aria-label="Audio transcriberen">
-        <section class="topic-planner" aria-label="Sprekers vooraf benoemen">
-          <div class="topic-planner-heading">
-            <div><h2>Sprekers</h2><p>Vul vóór de opname de rollen in, in de volgorde waarin de sprekers voor het eerst aan het woord komen.</p></div>
-            <button class="add-topic-button" id="add-speaker" type="button">+ Spreker</button>
+        <div class="setup-grid">
+          <div class="setup-column">
+            <section class="setup-card role-card" aria-labelledby="roles-heading">
+              <h2 id="roles-heading">1 · Welke rollen zijn aanwezig?</h2>
+              <p class="section-description">Sprekers worden gelabeld in de volgorde waarin ze voor het eerst spreken.</p>
+              <div class="speaker-input-list" id="speaker-input-list"></div>
+              <button class="setup-action-button" id="add-speaker" type="button">+ Rol toevoegen</button>
+            </section>
+            <section class="setup-card document-card" aria-labelledby="document-heading">
+              <h2 id="document-heading">2 · Document als context meesturen</h2>
+              <p class="section-description">Voeg een document toe. De inhoud wordt met de transcriptie geëxporteerd, niet gebruikt om spraakherkenning te corrigeren.</p>
+              <div class="document-dropzone" id="document-dropzone">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+                  <path d="M14 3v5h5"/>
+                </svg>
+                <div class="dropzone-copy">
+                  <strong>Sleep een document hierheen</strong>
+                  <span>Word, PDF of tekstbestand (.docx, .pdf, .txt) · max. 20 MB</span>
+                </div>
+                <input class="document-file-input" id="context-document" type="file" accept=".docx,.pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain" aria-label="Kies een Word-, PDF- of tekstbestand">
+                <label class="document-pick-button" for="context-document">Bestand kiezen</label>
+              </div>
+              <div class="document-file-row" id="document-file-row" hidden>
+                <strong id="document-file-name"></strong>
+                <span id="document-file-state">Toegevoegd</span>
+                <button class="remove-document-button" id="remove-context-document" type="button">Verwijderen</button>
+              </div>
+              <p class="document-status" id="document-status" aria-live="polite"></p>
+            </section>
           </div>
-          <div class="speaker-input-list" id="speaker-input-list"></div>
-        </section>
-        <section class="topic-planner" aria-label="Onderwerpen vooraf invullen">
-          <div class="topic-planner-heading">
-            <div><h2>Onderwerpen</h2><p>Vul zelf onderwerpen in vóór de opname. Laat de lijst leeg voor een gewone transcriptie.</p></div>
-            <button class="add-topic-button" id="add-topic" type="button">+ Onderwerp</button>
-          </div>
-          <div class="topic-input-list" id="topic-input-list"></div>
-        </section>
-        <section class="topic-planner" aria-label="Document als context">
-          <div class="topic-planner-heading">
-            <div><h2>Document als context</h2><p>Voeg een Word-, PDF- of tekstbestand toe. Het wordt lokaal naar Markdown omgezet en samen met de transcriptie geëxporteerd.</p></div>
-          </div>
-          <div class="document-input-row">
-            <input id="context-document" type="file" accept=".docx,.pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/plain" aria-label="Kies een Word-, PDF- of tekstbestand">
-            <button class="remove-topic-button" id="remove-context-document" type="button" hidden>Verwijderen</button>
-          </div>
-          <p class="document-status" id="document-status" aria-live="polite"></p>
-        </section>
-        <section class="recorder" aria-label="Microfoonopname">
-          <div class="recorder-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.7"/>
-              <path d="M6 11a6 6 0 0 0 12 0M12 17v4m-3 0h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <p class="recording-status" id="recording-status">Klaar om op te nemen</p>
-          <p class="recording-hint" id="recording-hint">Je browser vraagt toestemming voor de microfoon.</p>
-          <label class="capture-option" for="include-system-audio">
-            <input id="include-system-audio" type="checkbox">
-            <span><strong>Neem ook computergeluid op</strong><small>Je browser vraagt om een tabblad of scherm te delen en audio toe te staan.</small></span>
-          </label>
-          <div class="recording-time" id="recording-time" aria-live="off">00:00</div>
-          <div class="recording-visual" id="recording-visual" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-          </div>
-          <div class="recording-actions">
-            <button class="transcribe-button" id="start-recording" type="button">
-              <span>Start opname</span>
-              <span aria-hidden="true">●</span>
-            </button>
-            <button class="transcribe-button stop-button" id="stop-recording" type="button" hidden>
-              <span>Stoppen en transcriberen</span>
-              <span aria-hidden="true">■</span>
-            </button>
-          </div>
-          <p class="privacy-note"><span class="privacy-dot"></span>De opname verlaat je computer niet.</p>
-        </section>
+          <section class="setup-card recorder" aria-labelledby="recording-heading">
+            <h2 id="recording-heading">3 · Workshop opnemen</h2>
+            <p class="section-description">Kies wat er wordt opgenomen en start de opname.</p>
+            <label class="device-label" for="audio-input-device">Microfoon</label>
+            <select class="device-select" id="audio-input-device" aria-label="Microfoon kiezen">
+              <option value="">Standaardmicrofoon</option>
+            </select>
+            <div class="audio-level-row">
+              <span>Geluidsniveau</span>
+              <div class="recording-visual" id="recording-visual" role="progressbar" aria-label="Microfoongeluidsniveau" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0">
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+            <label class="capture-option" for="include-system-audio">
+              <input id="include-system-audio" type="checkbox">
+              <span><strong>Neem ook het geluid van de laptop op</strong><small>Handig bij een online vergadering. Je browser vraagt om een tabblad of scherm te delen en audio toe te staan.</small></span>
+            </label>
+            <div class="ready-checklist" aria-live="polite">
+              <strong>Klaar om te starten?</strong>
+              <span id="roles-ready">✓ 0 rollen gekozen</span>
+              <span id="document-ready">○ Document niet toegevoegd (optioneel)</span>
+              <span id="microphone-ready">✓ Microfoon wordt gecontroleerd bij start</span>
+            </div>
+            <div class="recording-status-row">
+              <p class="recording-status" id="recording-status">Klaar om op te nemen</p>
+              <span class="recording-time" id="recording-time" aria-live="off">00:00</span>
+            </div>
+            <p class="recording-hint" id="recording-hint">Je browser vraagt toestemming voor de microfoon.</p>
+            <div class="recording-actions">
+              <button class="transcribe-button" id="start-recording" type="button">
+                <span aria-hidden="true" class="record-button-dot"></span>
+                <span>Workshop opnemen</span>
+              </button>
+              <button class="transcribe-button stop-button" id="stop-recording" type="button" hidden>
+                <span aria-hidden="true">■</span>
+                <span>Stoppen en transcriberen</span>
+              </button>
+            </div>
+            <p class="privacy-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              <span>De opname en transcriptie blijven op deze laptop.</span>
+            </p>
+          </section>
+        </div>
 
         <section class="progress-card" id="progress-card" aria-live="polite" hidden>
           <div class="progress-heading">
-            <div class="progress-icon" id="progress-icon" aria-hidden="true">
-              <span class="spinner"></span>
-            </div>
+            <div class="progress-icon" id="progress-icon" aria-hidden="true"><span class="spinner"></span></div>
             <div class="progress-text">
               <p class="progress-label" id="progress-label">Klaarmaken</p>
               <p class="progress-detail" id="progress-detail">Even geduld...</p>
@@ -115,10 +155,7 @@
         <p class="error-message" id="error-message" role="alert" hidden></p>
       </section>
 
-      <footer>
-        <span>Audio blijft lokaal; Who kan gebruiksgegevens versturen.</span>
-        <span>De modellen worden bij het eerste gebruik gedownload.</span>
-      </footer>
+      <footer>Wij zijn het Rijksvastgoedbedrijf. <strong>Voor een beter Nederland.</strong></footer>
     </main>
   </body>
 </html>

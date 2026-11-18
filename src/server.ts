@@ -18,6 +18,7 @@ const litertWasmDirectory = join(dirname(require.resolve("@litertjs/core")), "..
 const vozWasmPath = require.resolve("@desert-ant-labs/voz/wasm");
 const pdfWorkerPath = require.resolve("pdfjs-dist/legacy/build/pdf.worker.min.mjs");
 const pageHtml = await readFile(resolve(dirname(fileURLToPath(import.meta.url)), "../index.html"), "utf8");
+const organizationLogoPath = resolve(dirname(fileURLToPath(import.meta.url)), "../public/RVB-logo.png");
 const styles = [
   ":root {\r",
   "  color-scheme: light;\r",
@@ -235,30 +236,25 @@ const styles = [
   ".copy-button { padding: 8px 10px; border: 1px solid #dce7f1; border-radius: 7px; color: #527b9f; background: white; cursor: pointer; font-size: 11px; font-weight: 600; }\r",
   ".copy-button:hover { border-color: #a9c7e1; }\r",
   ".transcript { display: grid; gap: 10px; margin-top: 14px; }\r",
-  ".topic-planner { margin-bottom: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 11px; background: #fcfdff; }\r",
-  ".topic-planner-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }\r",
-  ".topic-planner-heading h2 { font-size: 15px; }\r",
-  ".topic-planner-heading p { margin: 4px 0 0; color: #8998a8; font-size: 11px; line-height: 1.4; }\r",
-  ".add-topic-button, .remove-topic-button { padding: 7px 10px; border: 1px solid #dce7f1; border-radius: 7px; color: #527b9f; background: white; cursor: pointer; font-size: 11px; font-weight: 600; }\r",
-  ".speaker-input-list, .topic-input-list { display: grid; gap: 7px; margin-top: 12px; }\r",
+  ".setup-card { margin-bottom: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 11px; background: #fcfdff; }\r",
+  ".setup-card-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }\r",
+  ".setup-card-heading h2 { font-size: 15px; }\r",
+  ".setup-card-heading p { margin: 4px 0 0; color: #8998a8; font-size: 11px; line-height: 1.4; }\r",
+  ".setup-action-button { padding: 7px 10px; border: 1px solid #dce7f1; border-radius: 7px; color: #527b9f; background: white; cursor: pointer; font-size: 11px; font-weight: 600; }\r",
+  ".speaker-input-list { display: grid; gap: 7px; margin-top: 12px; }\r",
   ".speaker-input-row { display: grid; grid-template-columns: 90px minmax(0, 1fr); align-items: center; gap: 7px; }\r",
   ".speaker-number { color: #61778c; font-size: 11px; }\r",
   ".speaker-input { min-width: 0; padding: 8px 10px; border: 1px solid #dce7f1; border-radius: 7px; color: #354b61; background: white; font: 12px \"Segoe UI\", Arial, sans-serif; }\r",
-  ".topic-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; }\r",
-  ".topic-input { min-width: 0; padding: 8px 10px; border: 1px solid #dce7f1; border-radius: 7px; color: #354b61; background: white; font: 12px \"Segoe UI\", Arial, sans-serif; }\r",
-  ".document-input-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }\r",
-  ".document-input-row input { min-width: 0; flex: 1; color: #61778c; font-size: 11px; }\r",
+  ".document-input-row { position: relative; display: flex; align-items: center; gap: 8px; margin-top: 12px; }\r",
+  ".document-file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }\r",
+  ".document-pick-button { display: inline-flex; min-height: 36px; align-items: center; padding: 8px 12px; border: 1px solid #dce7f1; border-radius: 7px; color: #527b9f; background: white; cursor: pointer; font-size: 11px; font-weight: 600; }\r",
+  ".document-pick-button:hover { border-color: #a9c7e1; }\r",
+  ".document-file-input:focus-visible + .document-pick-button { outline: 2px solid #b7cfe4; outline-offset: 2px; }\r",
   ".document-status { min-height: 14px; margin: 7px 0 0; color: #78889a; font-size: 10px; }\r",
   ".result-actions { display: flex; flex-wrap: wrap; gap: 7px; }\r",
   ".context-preview { margin-top: 14px; padding: 12px; border: 1px solid #e3ebf3; border-radius: 8px; color: #52677b; background: white; font-size: 11px; }\r",
   ".context-preview summary { cursor: pointer; font-weight: 600; }\r",
   ".context-preview pre { max-height: 360px; margin: 10px 0 0; overflow: auto; color: #354b61; font: 11px/1.6 Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }\r",
-  ".topic-section.drag-over { border-color: #75a9d2; background: #f0f7fd; }\r",
-  ".sentence-drag-handle { cursor: grab; user-select: none; }\r",
-  ".sentence-drag-handle:active { cursor: grabbing; }\r",
-  ".topic-section { padding: 14px; border: 1px solid #e3ebf3; border-radius: 9px; background: #fbfdff; }\r",
-  ".topic-heading { width: min(100%, 420px); margin: 0 0 10px; padding: 5px 7px; border: 1px solid transparent; border-radius: 6px; color: #355d80; background: transparent; font: 700 13px \"Segoe UI\", Arial, sans-serif; }\r",
-  ".topic-heading:focus { border-color: #b7cfe4; outline: 2px solid #e7f1fb; background: white; }\r",
   ".speaker-turn { padding: 12px 14px; border: 1px solid #e3ebf3; border-left: 3px solid #7daed5; border-radius: 9px; background: #fbfdff; }\r",
   ".speaker-turn-0 { border-left-color: #6ea2cf; }\r",
   ".speaker-turn-1 { border-left-color: #73ad9f; }\r",
@@ -267,8 +263,7 @@ const styles = [
   ".speaker-turn-unknown { border-left-color: #a8b2bc; }\r",
   ".speaker-turn-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-bottom: 8px; }\r",
   ".turn-time { color: #8797a7; font: 10px Consolas, monospace; white-space: nowrap; }\r",
-  ".sentence-row { display: grid; grid-template-columns: 102px minmax(0, 1fr) auto; align-items: baseline; gap: 12px; padding-top: 7px; }\r",
-  ".topic-move { max-width: 165px; padding: 5px 7px; border: 1px solid #dce7f1; border-radius: 6px; color: #61778c; background: white; font: 10px \"Segoe UI\", Arial, sans-serif; }\r",
+  ".sentence-row { display: grid; grid-template-columns: 102px minmax(0, 1fr); align-items: baseline; gap: 12px; padding-top: 7px; }\r",
   ".word-time { padding-top: 2px; color: #8797a7; font: 10px Consolas, monospace; }\r",
   ".word-text { margin: 0; color: #354b61; font-size: 13px; line-height: 1.6; }\r",
   ".sentence-edit { display: block; width: 100%; min-height: 48px; margin-top: 5px; padding: 5px 7px; border: 1px solid transparent; border-radius: 6px; color: inherit; background: transparent; font: inherit; line-height: inherit; resize: vertical; }\r",
@@ -297,12 +292,278 @@ const styles = [
   "  .recorder { min-height: 270px; padding-right: 12px; padding-left: 12px; }\r",
   "  footer { flex-direction: column; gap: 6px; }\r",
   "  .sentence-row { grid-template-columns: 80px minmax(0, 1fr); gap: 8px; }\r",
-  "  .topic-move { grid-column: 2; justify-self: start; max-width: 100%; }\r",
-  "  .topic-planner-heading { align-items: flex-start; }\r",
-  "  .add-topic-button { flex: none; }\r",
+  "  .setup-card-heading { align-items: flex-start; }\r",
+  "  .setup-action-button { flex: none; }\r",
   "  .result-heading { align-items: flex-start; }\r",
   "  .result-actions { justify-content: flex-end; }\r",
   "}\r",
+  String.raw`
+  :root {
+    font-family: Aptos, Verdana, Calibri, Arial, sans-serif;
+    color: #111;
+    background: #f3f3f3;
+    --blue: #154273;
+    --blue-dark: #10365f;
+    --blue-soft: #e6e6e6;
+    --muted: #535353;
+    --line: #cccccc;
+  }
+
+  body { background: #f3f3f3; }
+  button, input, select, textarea { font-family: Aptos, Verdana, Calibri, Arial, sans-serif; }
+  .shell { width: min(100% - 48px, 960px); }
+  .topbar {
+    padding: 17px 20px;
+    border-bottom: 0;
+    border-radius: 0 0 18px 0;
+    color: white;
+    background: #154273;
+  }
+  .brand { color: white; font-family: Aptos, Verdana, Calibri, Arial, sans-serif; }
+  .brand-mark { border-radius: 3px 8px 8px 8px; color: #154273; background: #76d2b6; }
+  .brand-light { color: #8fcae7; }
+  .local-badge { border-color: rgba(255,255,255,.55); color: white; background: transparent; }
+  .live-dot { background: #76d2b6; }
+  .intro { padding: 46px 0 28px; }
+  .eyebrow { color: #154273; font-family: Aptos, Verdana, Calibri, Arial, sans-serif; font-weight: 700; }
+  h1 {
+    color: #154273;
+    font-family: Aptos, Verdana, Calibri, Arial, sans-serif;
+    font-size: clamp(36px, 6vw, 52px);
+    letter-spacing: -1.5px;
+  }
+  h1 span { color: #007bc7; }
+  .intro-copy { color: #353535; }
+  .workspace {
+    padding: 20px;
+    border: 1px solid #cccccc;
+    border-radius: 3px 12px 12px 12px;
+    background: white;
+    box-shadow: none;
+  }
+  .setup-card, .progress-card, .result-card {
+    border-color: #cccccc;
+    border-radius: 3px 9px 9px 9px;
+    background: white;
+  }
+  .setup-card { border-top: 3px solid #154273; }
+  h2, .setup-card-heading h2 { color: #154273; font-family: Aptos, Verdana, Calibri, Arial, sans-serif; }
+  .setup-card-heading p, .recording-hint, .capture-option small,
+  .progress-detail, .result-meta, .document-status, footer { color: #535353; }
+  .setup-action-button, .copy-button, .document-pick-button {
+    border-color: #154273;
+    border-radius: 3px 7px 7px 7px;
+    color: #154273;
+    background: white;
+  }
+  .setup-action-button:hover, .copy-button:hover, .document-pick-button:hover {
+    border-color: #007bc7;
+    color: #154273;
+    background: #e6e6e6;
+  }
+  .speaker-input, .sentence-edit {
+    border-color: #999999;
+    border-radius: 3px 6px 6px 6px;
+    color: #111;
+    background-color: white;
+    font-family: Aptos, Verdana, Calibri, Arial, sans-serif;
+  }
+  .speaker-input:focus, .sentence-edit:focus {
+    border-color: #154273;
+    outline: 3px solid #8fcae7;
+    outline-offset: 1px;
+  }
+  .speaker-number { color: #154273; font-weight: 700; }
+  .recorder { border: 1px solid #cccccc; border-top: 4px solid #154273; border-radius: 3px 12px 12px 12px; background: #f3f3f3; }
+  .recorder-icon, .progress-icon { border-radius: 3px 9px 9px 9px; color: #154273; background: #e6e6e6; }
+  .recording-status, .recording-time { color: #154273; }
+  .capture-option { color: #111; }
+  .capture-option input { accent-color: #154273; }
+  .recording-visual span { background: #8fcae7; }
+  .recording-visual.is-recording span { animation-name: sound-wave-styleguide; }
+  @keyframes sound-wave-styleguide { to { height: 20px; background: #76d2b6; } }
+  .transcribe-button {
+    border-radius: 3px 9px 9px 9px;
+    color: white;
+    background: #154273;
+  }
+  .transcribe-button:not(:disabled):hover { background: #10365f; }
+  .stop-button, .stop-button:not(:disabled):hover { color: #111; background: #e17000; }
+  .privacy-note { color: #535353; }
+  .privacy-dot { background: #76d2b6; }
+  .progress-icon.complete-icon { color: #154273; background: #76d2b6; }
+  .progress-track { background: #e6e6e6; }
+  .progress-fill { background: #007bc7; }
+  .spinner { border-color: #8fcae7; border-top-color: #154273; }
+  .context-preview {
+    border-color: #cccccc;
+    border-radius: 3px 8px 8px 8px;
+    background: white;
+  }
+  .speaker-label { border-radius: 3px 8px 8px 8px; }
+  .speaker-0 { color: #154273; background: #8fcae7; }
+  .speaker-1 { color: #111; background: #76d2b6; }
+  .speaker-2 { color: #111; background: #e17000; }
+  .speaker-3 { color: white; background: #007bc7; }
+  .speaker-unknown { color: #353535; background: #e6e6e6; }
+  .speaker-turn { border-color: #cccccc; border-radius: 3px 8px 8px 8px; background: white; }
+  .speaker-turn-0 { border-left-color: #154273; }
+  .speaker-turn-1 { border-left-color: #76d2b6; }
+  .speaker-turn-2 { border-left-color: #e17000; }
+  .speaker-turn-3 { border-left-color: #007bc7; }
+  .speaker-turn-unknown { border-left-color: #999999; }
+  .word-time, .turn-time { color: #535353; }
+  .word-text, .context-preview pre { color: #111; }
+  .error-message { border-color: #e17000; border-radius: 3px 8px 8px 8px; color: #111; background: #fff4e8; }
+  footer { border-top: 2px solid #154273; }
+
+  @media (max-width: 560px) {
+    .shell { width: min(100% - 30px, 960px); }
+    .topbar { padding: 14px; }
+    .intro { padding: 36px 0 24px; }
+    .workspace { padding: 13px; }
+  }
+
+  .shell { width: min(100% - 48px, 1440px); }
+  .page-header { display: flex; align-items: center; gap: 22px; padding: 18px 0; }
+  .organization-logo { width: 130px; height: 72px; flex: none; object-fit: contain; }
+  .page-titlebar {
+    display: flex;
+    min-width: 0;
+    min-height: 78px;
+    flex: 1;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding: 13px 22px;
+    border-radius: 3px 14px 14px 14px;
+    color: white;
+    background: #154273;
+  }
+  .page-kicker { margin: 0 0 4px; color: #8fcae7; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; }
+  .page-titlebar h1 { color: white; font-size: clamp(24px, 3vw, 33px); letter-spacing: -.7px; }
+  .page-titlebar .local-badge { flex: none; border-color: rgba(255,255,255,.55); color: white; background: transparent; }
+  .local-badge svg { width: 15px; height: 15px; }
+  .privacy-banner {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 17px;
+    padding: 15px 20px;
+    border: 1px solid #8fcae7;
+    border-left: 5px solid #007bc7;
+    border-radius: 3px 10px 10px 10px;
+    background: #eaf5fb;
+  }
+  .privacy-icon { display: grid; width: 40px; height: 40px; place-items: center; border-radius: 3px 8px 8px 8px; color: #154273; background: white; }
+  .privacy-icon svg { width: 22px; height: 22px; }
+  .privacy-copy h2 { font-size: 16px; }
+  .privacy-copy p { margin: 4px 0 0; color: #353535; font-size: 11px; line-height: 1.45; }
+  .privacy-facts { display: grid; gap: 5px; margin: 0; padding: 0; color: #154273; font-size: 10px; list-style: none; }
+  .privacy-facts li::before { content: "✓"; margin-right: 7px; color: #007b65; font-weight: 700; }
+  .workspace { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .setup-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 16px; }
+  .setup-column { display: grid; grid-template-rows: auto auto; align-content: start; gap: 14px; }
+  .setup-card, .recorder { min-width: 0; margin: 0; padding: 17px 19px; border: 1px solid #cccccc; border-top: 4px solid #154273; border-radius: 3px 11px 11px 11px; background: white; }
+  .setup-card h2, .recorder h2 { color: #154273; font-size: 16px; letter-spacing: -.2px; }
+  .section-description { margin: 5px 0 0; color: #535353; font-size: 11px; line-height: 1.45; }
+  .speaker-input-list { gap: 8px; margin-top: 12px; }
+  .speaker-input-row { grid-template-columns: 22px 52px minmax(0, 1fr) 30px; gap: 8px; }
+  .role-checkbox { display: grid; place-items: center; }
+  .role-checkbox input { width: 16px; height: 16px; margin: 0; accent-color: #154273; }
+  .speaker-number { color: #154273; font-size: 10px; font-weight: 700; }
+  .speaker-input { width: 100%; min-height: 32px; padding: 6px 8px; font-size: 11px; }
+  .remove-speaker-button { display: grid; width: 30px; height: 30px; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 3px 7px 7px 7px; color: #535353; background: transparent; cursor: pointer; font-size: 19px; line-height: 1; }
+  .remove-speaker-button:not(:disabled):hover { border-color: #e17000; color: #9c4d00; background: #fff4e8; }
+  .remove-speaker-button:focus-visible { outline: 3px solid #8fcae7; outline-offset: 1px; }
+  .remove-speaker-button:disabled { cursor: not-allowed; opacity: .48; }
+  .role-card > .setup-action-button { margin-top: 12px; }
+  .setup-action-button, .copy-button, .document-pick-button { min-height: 34px; border-radius: 3px 8px 8px 8px; }
+  .document-card { display: flex; flex-direction: column; }
+  .document-dropzone {
+    position: relative;
+    display: flex;
+    min-height: 82px;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px dashed #7ca4c5;
+    border-radius: 3px 9px 9px 9px;
+    background: #f7fbfd;
+  }
+  .document-dropzone.is-dragging { border-color: #007bc7; background: #eaf5fb; }
+  .document-dropzone > svg { width: 27px; height: 27px; flex: none; color: #154273; }
+  .dropzone-copy { display: grid; min-width: 0; flex: 1; gap: 4px; color: #154273; font-size: 11px; }
+  .dropzone-copy span { color: #535353; font-size: 10px; line-height: 1.35; }
+  .document-file-input { z-index: -1; }
+  .document-pick-button { flex: none; }
+  .document-file-row { display: flex; min-width: 0; align-items: center; gap: 9px; margin-top: 9px; color: #154273; font-size: 10px; }
+  .document-file-row strong { overflow: hidden; flex: 1; text-overflow: ellipsis; white-space: nowrap; }
+  .document-file-row span { color: #007b65; }
+  .remove-document-button { flex: none; padding: 5px 7px; border: 0; color: #535353; background: transparent; cursor: pointer; font-size: 10px; text-decoration: underline; }
+  .document-status { min-height: 0; margin: 4px 0 0; font-size: 10px; line-height: 1.4; }
+  .recorder { display: flex; min-height: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 17px 19px; background: white; }
+  .device-label { margin-top: 14px; color: #154273; font-size: 11px; font-weight: 700; }
+  .device-select { width: 100%; min-height: 36px; margin-top: 5px; padding: 7px 9px; border: 1px solid #999; border-radius: 3px 7px 7px 7px; color: #111; background: white; font-size: 12px; }
+  .device-select:focus-visible { outline: 3px solid #8fcae7; outline-offset: 1px; }
+  .audio-level-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 11px; color: #535353; font-size: 10px; }
+  .recording-visual { height: 25px; gap: 4px; margin: 0; }
+  .recording-visual span { width: 5px; height: 6px; background: #d6e0e8; transition: height .08s, background .08s; }
+  .recording-visual span.is-active { height: 17px; background: #007b65; }
+  .capture-option { width: 100%; gap: 9px; margin-top: 10px; padding: 10px; border: 1px solid #d5e0e8; border-radius: 3px 8px 8px 8px; }
+  .capture-option strong { color: #154273; font-size: 11px; }
+  .capture-option small { color: #535353; font-size: 10px; }
+  .ready-checklist { display: grid; gap: 5px; margin-top: 11px; padding: 10px 12px; border-left: 3px solid #007b65; color: #353535; background: #eff8f5; font-size: 10px; }
+  .ready-checklist strong { margin-bottom: 1px; color: #154273; font-size: 11px; }
+  .recording-status-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; }
+  .recording-status { font-size: 12px; }
+  .recording-time { margin: 0; font-size: 18px; }
+  .recording-hint { text-align: left; }
+  .recording-actions { width: 100%; margin-top: 12px; }
+  .transcribe-button { min-height: 43px; justify-content: center; gap: 10px; border-radius: 3px 9px 9px 9px; }
+  .record-button-dot { width: 9px; height: 9px; border-radius: 50%; background: #e17000; }
+  .stop-button, .stop-button:not(:disabled):hover { color: #111; background: #e17000; }
+  .privacy-note { align-items: flex-start; margin-top: 11px; color: #535353; font-size: 10px; line-height: 1.4; }
+  .privacy-note svg { width: 15px; height: 15px; flex: none; color: #154273; }
+  .progress-card, .result-card { margin-top: 16px; border-color: #cccccc; border-top: 4px solid #154273; border-radius: 3px 10px 10px 10px; background: white; }
+  .progress-fill { background: #007bc7; }
+  .error-message { border-color: #e17000; border-radius: 3px 8px 8px 8px; color: #111; background: #fff4e8; }
+  footer { justify-content: center; margin-top: 20px; padding: 14px 0 20px; border-top: 2px solid #154273; color: #154273; font-size: 13px; }
+  footer strong { margin-left: 4px; color: #007bc7; }
+
+  @media (max-width: 900px) {
+    .setup-grid { grid-template-columns: minmax(0, 1fr); }
+    .setup-column { grid-template-rows: auto auto; }
+    .privacy-banner { grid-template-columns: 40px minmax(0, 1fr); }
+    .privacy-facts { grid-column: 2; grid-template-columns: repeat(2, max-content); }
+  }
+  @media (max-width: 600px) {
+    .shell { width: min(100% - 28px, 1440px); }
+    .page-header { align-items: stretch; gap: 10px; padding: 12px 0; }
+    .organization-logo { width: 82px; height: auto; }
+    .page-titlebar { min-height: 70px; flex-direction: column; align-items: flex-start; gap: 5px; padding: 10px 12px; }
+    .page-kicker { font-size: 8px; }
+    .page-titlebar h1 { font-size: 20px; }
+    .page-titlebar .local-badge { padding: 0; border: 0; font-size: 9px; }
+    .page-titlebar .local-badge svg { width: 12px; height: 12px; }
+    .privacy-banner { grid-template-columns: 32px minmax(0, 1fr); gap: 10px; padding: 12px; }
+    .privacy-icon { width: 32px; height: 32px; }
+    .privacy-copy h2 { font-size: 14px; }
+    .privacy-copy p { font-size: 10px; }
+    .privacy-facts { grid-template-columns: 1fr; gap: 4px; font-size: 9px; }
+    .setup-card, .recorder { padding: 14px; }
+    .document-dropzone { flex-wrap: wrap; }
+    .dropzone-copy { flex-basis: calc(100% - 45px); }
+    .document-pick-button { margin-left: 39px; }
+    .document-file-row { flex-wrap: wrap; }
+    .sentence-row { grid-template-columns: 80px minmax(0, 1fr); gap: 8px; }
+    .result-heading { align-items: flex-start; }
+    .result-actions { justify-content: flex-end; }
+    footer { flex-wrap: wrap; text-align: center; font-size: 11px; }
+  }
+  `,
   "",
 ].join("\n");
 const browserApp = [
@@ -311,6 +572,10 @@ const browserApp = [
   "const recordingStatus = document.querySelector(\"#recording-status\");\r",
   "const recordingHint = document.querySelector(\"#recording-hint\");\r",
   "const includeSystemAudio = document.querySelector(\"#include-system-audio\");\r",
+  "const audioInputDevice = document.querySelector(\"#audio-input-device\");\r",
+  "const rolesReady = document.querySelector(\"#roles-ready\");\r",
+  "const documentReady = document.querySelector(\"#document-ready\");\r",
+  "const microphoneReady = document.querySelector(\"#microphone-ready\");\r",
   "const recordingTime = document.querySelector(\"#recording-time\");\r",
   "const recordingVisual = document.querySelector(\"#recording-visual\");\r",
   "const progressCard = document.querySelector(\"#progress-card\");\r",
@@ -327,14 +592,16 @@ const browserApp = [
   "const downloadButton = document.querySelector(\"#download-button\");\r",
   "const speakerInputList = document.querySelector(\"#speaker-input-list\");\r",
   "const addSpeakerButton = document.querySelector(\"#add-speaker\");\r",
-  "const topicInputList = document.querySelector(\"#topic-input-list\");\r",
-  "const addTopicButton = document.querySelector(\"#add-topic\");\r",
   "const contextDocumentInput = document.querySelector(\"#context-document\");\r",
   "const removeContextDocumentButton = document.querySelector(\"#remove-context-document\");\r",
   "const documentStatus = document.querySelector(\"#document-status\");\r",
   "const contextPreview = document.querySelector(\"#context-preview\");\r",
   "const contextFileName = document.querySelector(\"#context-file-name\");\r",
   "const contextMarkdownPreview = document.querySelector(\"#context-markdown-preview\");\r",
+  "const documentDropzone = document.querySelector(\"#document-dropzone\");\r",
+  "const documentFileRow = document.querySelector(\"#document-file-row\");\r",
+  "const documentFileName = document.querySelector(\"#document-file-name\");\r",
+  "const documentFileState = document.querySelector(\"#document-file-state\");\r",
   "\r",
   "let completedText = \"\";\r",
   "let contextMarkdown = \"\";\r",
@@ -342,9 +609,7 @@ const browserApp = [
   "let isConvertingDocument = false;\r",
   "let documentConversionId = 0;\r",
   "let speakerNames = [];\r",
-  "let renderedTopics = [];\r",
-  "let usingManualTopics = false;\r",
-  "let nextSentenceId = 0;\r",
+  "let renderedSentences = [];\r",
   "let vozPromise;\r",
   "let whoPromise;\r",
   "let mediaStream;\r",
@@ -360,10 +625,50 @@ const browserApp = [
   "let isRecording = false;\r",
   "let recordingStartedAt = 0;\r",
   "let recordingTimer;\r",
+  "let lastAudioLevelUpdate = 0;\r",
   "\r",
   "function showError(message) {\r",
   "  errorMessage.textContent = message;\r",
   "  errorMessage.hidden = false;\r",
+  "}\r",
+  "\r",
+  "function updateReadiness() {\r",
+  "  const selectedRoles = [...speakerInputList.querySelectorAll(\".role-checkbox input:checked\")];\r",
+  "  rolesReady.textContent = selectedRoles.length\r",
+  "    ? `✓ ${selectedRoles.length} ${selectedRoles.length === 1 ? \"rol\" : \"rollen\"} gekozen`\r",
+  "    : \"○ Geen rollen gekozen (standaardlabels worden gebruikt)\";\r",
+  "  documentReady.textContent = contextMarkdown\r",
+  "    ? \"✓ Document toegevoegd en omgezet naar Markdown\"\r",
+  "    : isConvertingDocument ? \"○ Document wordt omgezet naar Markdown...\" : \"○ Document niet toegevoegd (optioneel)\";\r",
+  "  microphoneReady.textContent = audioInputDevice.value\r",
+  "    ? `✓ ${audioInputDevice.selectedOptions[0].textContent} geselecteerd`\r",
+  "    : \"✓ Microfoon wordt gecontroleerd bij start\";\r",
+  "}\r",
+  "\r",
+  "function setAudioLevel(level) {\r",
+  "  const bars = [...recordingVisual.querySelectorAll(\"span\")];\r",
+  "  const activeBars = Math.max(0, Math.min(bars.length, level));\r",
+  "  bars.forEach((bar, index) => bar.classList.toggle(\"is-active\", index < activeBars));\r",
+  "  recordingVisual.setAttribute(\"aria-valuenow\", String(activeBars));\r",
+  "}\r",
+  "\r",
+  "async function refreshAudioInputs() {\r",
+  "  const selectedDeviceId = audioInputDevice.value;\r",
+  "  const devices = await navigator.mediaDevices.enumerateDevices();\r",
+  "  const microphones = devices.filter((device) => device.kind === \"audioinput\" && device.deviceId);\r",
+  "  audioInputDevice.replaceChildren();\r",
+  "  const defaultOption = document.createElement(\"option\");\r",
+  "  defaultOption.value = \"\";\r",
+  "  defaultOption.textContent = \"Standaardmicrofoon\";\r",
+  "  audioInputDevice.append(defaultOption);\r",
+  "  microphones.forEach((device, index) => {\r",
+  "    const option = document.createElement(\"option\");\r",
+  "    option.value = device.deviceId;\r",
+  "    option.textContent = device.label || `Microfoon ${index + 1}`;\r",
+  "    audioInputDevice.append(option);\r",
+  "  });\r",
+  "  if (microphones.some((device) => device.deviceId === selectedDeviceId)) audioInputDevice.value = selectedDeviceId;\r",
+  "  updateReadiness();\r",
   "}\r",
   "\r",
   "function setProgress({ stage, progress, message }) {\r",
@@ -392,12 +697,13 @@ const browserApp = [
   "function setBusy(isBusy) {\r",
   "  startButton.disabled = isBusy || isConvertingDocument;\r",
   "  includeSystemAudio.disabled = isBusy;\r",
+  "  audioInputDevice.disabled = isBusy;\r",
   "  contextDocumentInput.disabled = isBusy;\r",
   "  removeContextDocumentButton.disabled = isBusy;\r",
   "  addSpeakerButton.disabled = isBusy;\r",
   "  speakerInputList.querySelectorAll(\"input\").forEach((input) => { input.disabled = isBusy; });\r",
-  "  addTopicButton.disabled = isBusy;\r",
-  "  topicInputList.querySelectorAll(\"input, button\").forEach((control) => { control.disabled = isBusy; });\r",
+  "  speakerInputList.querySelectorAll(\".remove-speaker-button\").forEach((button) => { button.disabled = isBusy; });\r",
+  "  updateReadiness();\r",
   "  if (!isRecording) startButton.hidden = false;\r",
   "  stopButton.hidden = true;\r",
   "  recordingStatus.textContent = isBusy ? \"Bezig met transcriptie\" : \"Klaar om op te nemen\";\r",
@@ -499,17 +805,11 @@ const browserApp = [
   "}\r",
   "\r",
   "function transcriptText() {\r",
-  "  const copyLines = [];\r",
-  "  for (const topic of renderedTopics) {\r",
-  "    if (topic.title) copyLines.push(topic.title);\r",
-  "    for (const sentence of topic.sentences) {\r",
-  "      const speakerLabel = speakerLabelFor(sentence.speaker);\r",
-  "      const sentenceText = sentence.editedText ?? sentence.words.map((word) => word.text).join(\" \");\r",
-  "      copyLines.push(`${speakerLabel}: ${sentenceText}`);\r",
-  "    }\r",
-  "    copyLines.push(\"\");\r",
-  "  }\r",
-  "  return copyLines.join(\"\\n\").trim();\r",
+  "  return renderedSentences.map((sentence) => {\r",
+  "    const speakerLabel = speakerLabelFor(sentence.speaker);\r",
+  "    const sentenceText = sentence.editedText ?? sentence.words.map((word) => word.text).join(\" \");\r",
+  "    return `${speakerLabel}: ${sentenceText}`;\r",
+  "  }).join(\"\\n\").trim();\r",
   "}\r",
   "\r",
   "function speakerLabelFor(speaker) {\r",
@@ -597,11 +897,16 @@ const browserApp = [
   "  const conversionId = ++documentConversionId;\r",
   "  contextMarkdown = \"\";\r",
   "  contextDocumentName = file.name;\r",
+  "  documentFileRow.hidden = false;\r",
+  "  documentFileName.textContent = file.name;\r",
+  "  documentFileState.textContent = \"Omzetten...\";\r",
+  "  updateReadiness();\r",
   "  contextMarkdownPreview.textContent = \"\";\r",
   "  contextPreview.hidden = true;\r",
   "  errorMessage.hidden = true;\r",
   "  removeContextDocumentButton.hidden = false;\r",
   "  isConvertingDocument = true;\r",
+  "  updateReadiness();\r",
   "  startButton.disabled = true;\r",
   "  documentStatus.textContent = \"Document lokaal naar Markdown omzetten...\";\r",
   "  try {\r",
@@ -622,14 +927,17 @@ const browserApp = [
   "    }\r",
   "    if (conversionId !== documentConversionId) return;\r",
   "    contextMarkdown = markdown;\r",
+  "    documentFileState.textContent = \"Klaar\";\r",
   "    updateContextPreview();\r",
   "    documentStatus.textContent = hasWarnings\r",
-  "      ? \"Omgezet naar Markdown; sommige documentonderdelen konden niet worden meegenomen.\"\r",
-  "      : \"Omgezet naar Markdown en klaar om met de transcriptie te bundelen.\";\r",
+  "      ? `${file.name} omgezet naar Markdown; sommige documentonderdelen konden niet worden meegenomen.`\r",
+  "      : `${file.name} omgezet naar Markdown en klaar om met de transcriptie te bundelen.`;\r",
   "  } catch (error) {\r",
   "    if (conversionId !== documentConversionId) return;\r",
   "    contextDocumentInput.value = \"\";\r",
   "    contextDocumentName = \"\";\r",
+  "    documentFileRow.hidden = true;\r",
+  "    updateReadiness();\r",
   "    removeContextDocumentButton.hidden = true;\r",
   "    const detail = error instanceof Error ? error.message : String(error);\r",
   "    documentStatus.textContent = `Omzetten mislukt: ${detail}`;\r",
@@ -638,127 +946,47 @@ const browserApp = [
   "    if (conversionId === documentConversionId) {\r",
   "      isConvertingDocument = false;\r",
   "      startButton.disabled = false;\r",
+  "      updateReadiness();\r",
   "    }\r",
   "  }\r",
   "}\r",
   "\r",
-  "function moveSentence(sentenceId, destinationIndex) {\r",
-  "  const source = renderedTopics.find((topic) => topic.sentences.some((sentence) => sentence.id === sentenceId));\r",
-  "  const destination = renderedTopics[destinationIndex];\r",
-  "  if (!source || !destination || source === destination) return;\r",
-  "  const sentenceIndex = source.sentences.findIndex((sentence) => sentence.id === sentenceId);\r",
-  "  const [sentence] = source.sentences.splice(sentenceIndex, 1);\r",
-  "  destination.sentences.push(sentence);\r",
-  "  destination.sentences.sort((a, b) => a.words[0].start - b.words[0].start);\r",
-  "  renderTopicBlocks();\r",
-  "}\r",
-  "\r",
-  "function renderTopicBlocks() {\r",
+  "function renderTranscript() {\r",
   "  transcript.replaceChildren();\r",
-  "\r",
-  "  renderedTopics.forEach((topic, topicIndex) => {\r",
-  "    const topicSection = document.createElement(\"section\");\r",
-  "    topicSection.className = \"topic-section\";\r",
-  "    if (topic.title) {\r",
-  "      const topicHeading = document.createElement(\"input\");\r",
-  "      topicHeading.className = \"topic-heading\";\r",
-  "      topicHeading.type = \"text\";\r",
-  "      topicHeading.maxLength = 100;\r",
-  "      topicHeading.setAttribute(\"aria-label\", `Onderwerp ${topicIndex + 1} bewerken`);\r",
-  "      topicHeading.value = topic.title;\r",
-  "      topicHeading.addEventListener(\"change\", () => {\r",
-  "        topic.title = topicHeading.value.trim();\r",
-  "        renderTopicBlocks();\r",
-  "      });\r",
-  "      topicSection.append(topicHeading);\r",
-  "    }\r",
-  "    topicSection.addEventListener(\"dragover\", (event) => {\r",
-  "      event.preventDefault();\r",
-  "      topicSection.classList.add(\"drag-over\");\r",
+  "  renderedSentences.forEach((sentence, sentenceIndex) => {\r",
+  "    const speakerLabel = speakerLabelFor(sentence.speaker);\r",
+  "    const sentenceRow = document.createElement(\"div\");\r",
+  "    sentenceRow.className = \"sentence-row\";\r",
+  "    const sentenceTime = document.createElement(\"span\");\r",
+  "    sentenceTime.className = \"word-time\";\r",
+  "    sentenceTime.textContent = `${sentence.words[0].start.toFixed(2)} – ${sentence.words[sentence.words.length - 1].end.toFixed(2)} s`;\r",
+  "    const text = document.createElement(\"div\");\r",
+  "    text.className = \"word-text\";\r",
+  "    const speaker = document.createElement(\"span\");\r",
+  "    speaker.className = sentence.speaker === null\r",
+  "      ? \"speaker-label speaker-unknown\"\r",
+  "      : `speaker-label speaker-${sentence.speaker % 4}`;\r",
+  "    speaker.textContent = speakerLabel;\r",
+  "    const sentenceEdit = document.createElement(\"textarea\");\r",
+  "    sentenceEdit.className = \"sentence-edit\";\r",
+  "    sentenceEdit.rows = 2;\r",
+  "    sentenceEdit.maxLength = 5000;\r",
+  "    sentenceEdit.setAttribute(\"aria-label\", `Zin ${sentenceIndex + 1} bewerken`);\r",
+  "    sentenceEdit.value = sentence.editedText ?? sentence.words.map((word) => word.text).join(\" \");\r",
+  "    sentenceEdit.addEventListener(\"input\", () => {\r",
+  "      sentence.editedText = sentenceEdit.value;\r",
+  "      completedText = transcriptText();\r",
   "    });\r",
-  "    topicSection.addEventListener(\"dragleave\", (event) => {\r",
-  "      if (!topicSection.contains(event.relatedTarget)) topicSection.classList.remove(\"drag-over\");\r",
-  "    });\r",
-  "    topicSection.addEventListener(\"drop\", (event) => {\r",
-  "      event.preventDefault();\r",
-  "      topicSection.classList.remove(\"drag-over\");\r",
-  "      const draggedSentenceId = event.dataTransfer.getData(\"text/plain\");\r",
-  "      if (!/^\\d+$/.test(draggedSentenceId)) return;\r",
-  "      moveSentence(Number(draggedSentenceId), topicIndex);\r",
-  "    });\r",
-  "    if (topic.title && topic.sentences.length === 0) {\r",
-  "      const dropHint = document.createElement(\"p\");\r",
-  "      dropHint.className = \"progress-detail\";\r",
-  "      dropHint.textContent = \"Sleep zinnen hierheen\";\r",
-  "      topicSection.append(dropHint);\r",
-  "    }\r",
-  "\r",
-  "    for (const [sentenceIndex, sentence] of topic.sentences.entries()) {\r",
-  "      const speakerLabel = speakerLabelFor(sentence.speaker);\r",
-  "      const sentenceRow = document.createElement(\"div\");\r",
-  "      sentenceRow.className = \"sentence-row\";\r",
-  "      const sentenceTime = document.createElement(\"span\");\r",
-  "      sentenceTime.className = \"word-time\";\r",
-  "      sentenceTime.classList.add(\"sentence-drag-handle\");\r",
-  "      sentenceTime.draggable = true;\r",
-  "      sentenceTime.title = \"Sleep deze zin naar een onderwerp\";\r",
-  "      sentenceTime.textContent = `${sentence.words[0].start.toFixed(2)} – ${sentence.words[sentence.words.length - 1].end.toFixed(2)} s`;\r",
-  "      sentenceTime.addEventListener(\"dragstart\", (event) => {\r",
-  "        event.dataTransfer.setData(\"text/plain\", String(sentence.id));\r",
-  "        event.dataTransfer.effectAllowed = \"move\";\r",
-  "      });\r",
-  "      const text = document.createElement(\"div\");\r",
-  "      text.className = \"word-text\";\r",
-  "      const speaker = document.createElement(\"span\");\r",
-  "      speaker.className = sentence.speaker === null\r",
-  "        ? \"speaker-label speaker-unknown\"\r",
-  "        : `speaker-label speaker-${sentence.speaker % 4}`;\r",
-  "      speaker.textContent = speakerLabel;\r",
-  "      const sentenceEdit = document.createElement(\"textarea\");\r",
-  "      sentenceEdit.className = \"sentence-edit\";\r",
-  "      sentenceEdit.rows = 2;\r",
-  "      sentenceEdit.maxLength = 5000;\r",
-  "      sentenceEdit.setAttribute(\"aria-label\", `Zin ${sentenceIndex + 1} bewerken`);\r",
-  "      sentenceEdit.value = sentence.editedText ?? sentence.words.map((word) => word.text).join(\" \");\r",
-  "      sentenceEdit.addEventListener(\"input\", () => {\r",
-  "        sentence.editedText = sentenceEdit.value;\r",
-  "        completedText = transcriptText();\r",
-  "      });\r",
-  "      text.append(speaker, sentenceEdit);\r",
-  "      const moveSelect = document.createElement(\"select\");\r",
-  "      moveSelect.className = \"topic-move\";\r",
-  "      moveSelect.setAttribute(\"aria-label\", `Verplaats zin naar een onderwerp`);\r",
-  "      renderedTopics.forEach((destination, destinationIndex) => {\r",
-  "        const option = document.createElement(\"option\");\r",
-  "        option.value = String(destinationIndex);\r",
-  "        option.textContent = destination.title || \"Geen onderwerp\";\r",
-  "        option.selected = destinationIndex === topicIndex;\r",
-  "        moveSelect.append(option);\r",
-  "      });\r",
-  "      moveSelect.addEventListener(\"change\", () => {\r",
-  "        const destinationIndex = Number(moveSelect.value);\r",
-  "        moveSentence(sentence.id, destinationIndex);\r",
-  "      });\r",
-  "      sentenceRow.append(sentenceTime, text, moveSelect);\r",
-  "      topicSection.append(sentenceRow);\r",
-  "    }\r",
-  "    transcript.append(topicSection);\r",
+  "    text.append(speaker, sentenceEdit);\r",
+  "    sentenceRow.append(sentenceTime, text);\r",
+  "    transcript.append(sentenceRow);\r",
   "  });\r",
   "  completedText = transcriptText();\r",
   "}\r",
   "\r",
   "function renderResult(result) {\r",
-  "  const sentences = makeSentences(result.words);\r",
-  "  sentences.forEach((sentence) => { sentence.id = nextSentenceId++; });\r",
-  "  const manualTopicNames = [...new Set([...topicInputList.querySelectorAll(\".topic-input\")]\r",
-  "    .map((input) => input.value.trim())\r",
-  "    .filter(Boolean))];\r",
-  "  usingManualTopics = manualTopicNames.length > 0;\r",
-  "  renderedTopics = usingManualTopics\r",
-  "    ? manualTopicNames.map((title) => ({ title, sentences: [] }))\r",
-  "    : [{ title: \"\", sentences }];\r",
-  "  if (usingManualTopics && renderedTopics.length) renderedTopics[0].sentences = sentences;\r",
-  "  renderTopicBlocks();\r",
+  "  renderedSentences = makeSentences(result.words);\r",
+  "  renderTranscript();\r",
   "\r",
   "  if (result.words.length === 0) {\r",
   "    const empty = document.createElement(\"p\");\r",
@@ -918,12 +1146,12 @@ const browserApp = [
   "  recordingTime.textContent = \"00:00\";\r",
   "  startButton.disabled = true;\r",
   "  includeSystemAudio.disabled = true;\r",
+  "  audioInputDevice.disabled = true;\r",
   "  contextDocumentInput.disabled = true;\r",
   "  removeContextDocumentButton.disabled = true;\r",
   "  addSpeakerButton.disabled = true;\r",
   "  speakerInputList.querySelectorAll(\"input\").forEach((input) => { input.disabled = true; });\r",
-  "  addTopicButton.disabled = true;\r",
-  "  topicInputList.querySelectorAll(\"input, button\").forEach((control) => { control.disabled = true; });\r",
+  "  speakerInputList.querySelectorAll(\".remove-speaker-button\").forEach((button) => { button.disabled = true; });\r",
   "  recordingStatus.textContent = includeSystemAudio.checked ? \"Toestemming voor audio vragen...\" : \"Toestemming voor de microfoon vragen...\";\r",
   "  recordingHint.textContent = includeSystemAudio.checked\r",
   "    ? \"Kies een tabblad of scherm en schakel audio delen in.\"\r",
@@ -937,8 +1165,14 @@ const browserApp = [
   "      }\r",
   "    }\r",
   "    mediaStream = await navigator.mediaDevices.getUserMedia({\r",
-  "      audio: { channelCount: 1, echoCancellation: !includeSystemAudio.checked, noiseSuppression: !includeSystemAudio.checked },\r",
+  "      audio: {\r",
+  "        ...(audioInputDevice.value ? { deviceId: { exact: audioInputDevice.value } } : {}),\r",
+  "        channelCount: 1,\r",
+  "        echoCancellation: !includeSystemAudio.checked,\r",
+  "        noiseSuppression: !includeSystemAudio.checked,\r",
+  "      },\r",
   "    });\r",
+  "    void refreshAudioInputs().catch((error) => showError(`Microfoons konden niet worden bijgewerkt: ${error instanceof Error ? error.message : String(error)}`));\r",
   "    audioContext = new AudioContext();\r",
   "    await audioContext.resume();\r",
   "    sourceNode = audioContext.createMediaStreamSource(mediaStream);\r",
@@ -972,6 +1206,13 @@ const browserApp = [
   "        }\r",
   "      }\r",
   "      appendSamples(outputSamples, audioContext.sampleRate);\r",
+  "      const now = Date.now();\r",
+  "      if (now - lastAudioLevelUpdate >= 100) {\r",
+  "        let energy = 0;\r",
+  "        for (const sample of outputSamples) energy += sample * sample;\r",
+  "        setAudioLevel(Math.floor(Math.sqrt(energy / outputSamples.length) * 80));\r",
+  "        lastAudioLevelUpdate = now;\r",
+  "      }\r",
   "      event.outputBuffer.getChannelData(0).fill(0);\r",
   "    };\r",
   "    processorNode.connect(audioContext.destination);\r",
@@ -993,12 +1234,13 @@ const browserApp = [
   "    await stopTracks();\r",
   "    startButton.disabled = false;\r",
   "    includeSystemAudio.disabled = false;\r",
+  "    audioInputDevice.disabled = false;\r",
   "    contextDocumentInput.disabled = false;\r",
   "    removeContextDocumentButton.disabled = false;\r",
   "    addSpeakerButton.disabled = false;\r",
   "    speakerInputList.querySelectorAll(\"input\").forEach((input) => { input.disabled = false; });\r",
-  "    addTopicButton.disabled = false;\r",
-  "    topicInputList.querySelectorAll(\"input, button\").forEach((control) => { control.disabled = false; });\r",
+  "    speakerInputList.querySelectorAll(\".remove-speaker-button\").forEach((button) => { button.disabled = false; });\r",
+  "    setAudioLevel(0);\r",
   "    recordingStatus.textContent = \"Klaar om op te nemen\";\r",
   "    recordingHint.textContent = \"Geef toestemming voor de gewenste audiobron(nen) om te beginnen.\";\r",
   "    const message = error instanceof DOMException && error.name === \"NotAllowedError\"\r",
@@ -1019,6 +1261,7 @@ const browserApp = [
   "  stopButton.disabled = true;\r",
   "  stopButton.querySelector(\"span\").textContent = \"Opname afronden...\";\r",
   "  recordingVisual.classList.remove(\"is-recording\");\r",
+  "  setAudioLevel(0);\r",
   "  recordingStatus.textContent = \"Opname afronden\";\r",
   "  if (processorNode) {\r",
   "    processorNode.onaudioprocess = null;\r",
@@ -1048,57 +1291,82 @@ const browserApp = [
   "}\r",
   "\r",
   "startButton.addEventListener(\"click\", () => {\r",
-  "  speakerNames = [...speakerInputList.querySelectorAll(\"input\")]\r",
-  "    .map((input, index) => input.value.trim() || `Spreker ${index + 1}`);\r",
+  "  speakerNames = [...speakerInputList.querySelectorAll(\".speaker-input-row\")]\r",
+  "    .filter((row) => row.querySelector(\".role-checkbox input\").checked)\r",
+  "    .map((row, index) => row.querySelector(\".speaker-input\").value.trim() || `Spreker ${index + 1}`);\r",
   "  void startRecording();\r",
   "});\r",
   "stopButton.addEventListener(\"click\", () => { void stopRecording(); });\r",
-  "function addSpeakerInput(number) {\r",
+  "function addSpeakerInput(number, roleName = \"\") {\r",
   "  const row = document.createElement(\"div\");\r",
   "  row.className = \"speaker-input-row\";\r",
-  "  const label = document.createElement(\"label\");\r",
+  "  const checkboxLabel = document.createElement(\"label\");\r",
+  "  checkboxLabel.className = \"role-checkbox\";\r",
+  "  checkboxLabel.htmlFor = `role-enabled-${number}`;\r",
+  "  const checkbox = document.createElement(\"input\");\r",
+  "  checkbox.id = `role-enabled-${number}`;\r",
+  "  checkbox.type = \"checkbox\";\r",
+  "  checkbox.checked = true;\r",
+  "  checkbox.setAttribute(\"aria-label\", `Rol ${number} meenemen`);\r",
+  "  checkboxLabel.append(checkbox);\r",
+  "  const label = document.createElement(\"span\");\r",
   "  label.className = \"speaker-number\";\r",
-  "  label.textContent = `Spreker ${number}`;\r",
+  "  label.textContent = String(number).padStart(2, \"0\");\r",
   "  const input = document.createElement(\"input\");\r",
   "  input.className = \"speaker-input\";\r",
   "  input.type = \"text\";\r",
   "  input.maxLength = 100;\r",
-  "  input.placeholder = `Naam van spreker ${number}`;\r",
-  "  input.setAttribute(\"aria-label\", `Rol van spreker ${number}`);\r",
-  "  label.htmlFor = `speaker-name-${number}`;\r",
+  "  input.placeholder = `Naam van rol ${number}`;\r",
+  "  input.value = roleName;\r",
+  "  input.setAttribute(\"aria-label\", `Naam van rol ${number}`);\r",
   "  input.id = `speaker-name-${number}`;\r",
-  "  row.append(label, input);\r",
-  "  speakerInputList.append(row);\r",
-  "}\r",
-  "addSpeakerInput(1);\r",
-  "addSpeakerInput(2);\r",
-  "addSpeakerButton.addEventListener(\"click\", () => {\r",
-  "  addSpeakerInput(speakerInputList.querySelectorAll(\"input\").length + 1);\r",
-  "});\r",
-  "function addTopicInput(value = \"\") {\r",
-  "  const row = document.createElement(\"div\");\r",
-  "  row.className = \"topic-input-row\";\r",
-  "  const input = document.createElement(\"input\");\r",
-  "  input.className = \"topic-input\";\r",
-  "  input.type = \"text\";\r",
-  "  input.maxLength = 100;\r",
-  "  input.placeholder = \"Bijv. planning\";\r",
-  "  input.setAttribute(\"aria-label\", \"Onderwerpnaam\");\r",
-  "  input.value = value;\r",
   "  const removeButton = document.createElement(\"button\");\r",
-  "  removeButton.className = \"remove-topic-button\";\r",
+  "  removeButton.className = \"remove-speaker-button\";\r",
   "  removeButton.type = \"button\";\r",
-  "  removeButton.textContent = \"Verwijderen\";\r",
-  "  removeButton.setAttribute(\"aria-label\", \"Verwijder dit onderwerp\");\r",
-  "  removeButton.addEventListener(\"click\", () => row.remove());\r",
-  "  row.append(input, removeButton);\r",
-  "  topicInputList.append(row);\r",
+  "  removeButton.textContent = \"×\";\r",
+  "  removeButton.setAttribute(\"aria-label\", `Rol ${number} verwijderen`);\r",
+  "  removeButton.title = `Rol ${number} verwijderen`;\r",
+  "  removeButton.addEventListener(\"click\", () => {\r",
+  "    row.remove();\r",
+  "    renumberSpeakerInputs();\r",
+  "    updateReadiness();\r",
+  "  });\r",
+  "  row.append(checkboxLabel, label, input, removeButton);\r",
+  "  speakerInputList.append(row);\r",
+  "  updateReadiness();\r",
   "}\r",
-  "for (let topicNumber = 1; topicNumber <= 5; topicNumber++) {\r",
-  "  addTopicInput(`Onderwerp ${topicNumber}`);\r",
-  "}\r",
-  "addTopicButton.addEventListener(\"click\", () => addTopicInput());\r",
   "\r",
+  "function renumberSpeakerInputs() {\r",
+  "  speakerInputList.querySelectorAll(\".speaker-input-row\").forEach((row, index) => {\r",
+  "    const number = index + 1;\r",
+  "    const checkboxLabel = row.querySelector(\".role-checkbox\");\r",
+  "    const checkbox = checkboxLabel.querySelector(\"input\");\r",
+  "    const numberLabel = row.querySelector(\".speaker-number\");\r",
+  "    const input = row.querySelector(\".speaker-input\");\r",
+  "    const removeButton = row.querySelector(\".remove-speaker-button\");\r",
+  "    checkbox.id = `role-enabled-${number}`;\r",
+  "    checkboxLabel.htmlFor = checkbox.id;\r",
+  "    checkbox.setAttribute(\"aria-label\", `Rol ${number} meenemen`);\r",
+  "    numberLabel.textContent = String(number).padStart(2, \"0\");\r",
+  "    input.id = `speaker-name-${number}`;\r",
+  "    input.placeholder = `Naam van rol ${number}`;\r",
+  "    input.setAttribute(\"aria-label\", `Naam van rol ${number}`);\r",
+  "    removeButton.setAttribute(\"aria-label\", `Rol ${number} verwijderen`);\r",
+  "    removeButton.title = `Rol ${number} verwijderen`;\r",
+  "  });\r",
+  "}\r",
+  "addSpeakerInput(1, \"Privacy officer\");\r",
+  "addSpeakerInput(2, \"Burger\");\r",
+  "addSpeakerInput(3, \"Use case houder\");\r",
+  "addSpeakerButton.addEventListener(\"click\", () => {\r",
+  "  addSpeakerInput(speakerInputList.querySelectorAll(\".speaker-input-row\").length + 1);\r",
+  "});\r",
+  "speakerInputList.addEventListener(\"change\", updateReadiness);\r",
+  "audioInputDevice.addEventListener(\"change\", updateReadiness);\r",
+  "void refreshAudioInputs().catch((error) => showError(`Microfoons konden niet worden geladen: ${error instanceof Error ? error.message : String(error)}`));\r",
+  "navigator.mediaDevices?.addEventListener(\"devicechange\", () => {\r",
+  "  void refreshAudioInputs().catch((error) => showError(`Microfoons konden niet worden bijgewerkt: ${error instanceof Error ? error.message : String(error)}`));\r",
+  "});\r",
   "copyButton.addEventListener(\"click\", async () => {\r",
   "  try {\r",
   "    await navigator.clipboard.writeText(markdownExport());\r",
@@ -1122,15 +1390,40 @@ const browserApp = [
   "  const file = contextDocumentInput.files[0];\r",
   "  if (file) void convertContextDocument(file);\r",
   "});\r",
+  "for (const eventName of [\"dragenter\", \"dragover\"]) {\r",
+  "  documentDropzone.addEventListener(eventName, (event) => {\r",
+  "    event.preventDefault();\r",
+  "    if (!contextDocumentInput.disabled) documentDropzone.classList.add(\"is-dragging\");\r",
+  "  });\r",
+  "}\r",
+  "for (const eventName of [\"dragleave\", \"drop\"]) {\r",
+  "  documentDropzone.addEventListener(eventName, (event) => {\r",
+  "    event.preventDefault();\r",
+  "    documentDropzone.classList.remove(\"is-dragging\");\r",
+  "  });\r",
+  "}\r",
+  "documentDropzone.addEventListener(\"drop\", (event) => {\r",
+  "  if (contextDocumentInput.disabled) {\r",
+  "    showError(\"Een document kan niet worden gewijzigd tijdens een opname of transcriptie.\");\r",
+  "    return;\r",
+  "  }\r",
+  "  const file = event.dataTransfer?.files[0];\r",
+  "  if (!file) return;\r",
+  "  void convertContextDocument(file);\r",
+  "});\r",
   "removeContextDocumentButton.addEventListener(\"click\", () => {\r",
   "  documentConversionId++;\r",
   "  contextDocumentInput.value = \"\";\r",
   "  contextMarkdown = \"\";\r",
   "  contextDocumentName = \"\";\r",
+  "  documentFileRow.hidden = true;\r",
+  "  documentFileName.textContent = \"\";\r",
+  "  documentFileState.textContent = \"\";\r",
   "  isConvertingDocument = false;\r",
   "  startButton.disabled = false;\r",
   "  removeContextDocumentButton.hidden = true;\r",
   "  documentStatus.textContent = \"\";\r",
+  "  updateReadiness();\r",
   "  updateContextPreview();\r",
   "});\r",
   "",
@@ -1277,6 +1570,17 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
       "X-Content-Type-Options": "nosniff",
     });
     response.end(content);
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/RVB-logo.png") {
+    const logo = await readFile(organizationLogoPath);
+    response.writeHead(200, {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+    });
+    response.end(logo);
     return;
   }
 
@@ -1431,6 +1735,7 @@ async function buildPages(): Promise<void> {
   await writeFile(join(outputDirectory, "index.html"), versionedPageHtml);
   await writeFile(join(outputDirectory, "styles.css"), styles);
   await writeFile(join(outputDirectory, "app.js"), await buildBrowserBundle());
+  await copyFile(organizationLogoPath, join(outputDirectory, "RVB-logo.png"));
 
   const litertOutputDirectory = join(outputDirectory, "litert-wasm");
   await mkdir(litertOutputDirectory, { recursive: true });

@@ -6,6 +6,8 @@ De opname, transcriptie en sprekerherkenning draaien in de browser; audio wordt 
 
 ## Publiceren op GitHub Pages
 
+Er staat een demo klaar op [daphnebruggeman.github.io/DesertAntsTesting](https://daphnebruggeman.github.io/DesertAntsTesting/).
+
 De workflow in `.github/workflows/pages.yml` bouwt en publiceert de statische app bij iedere push naar `main`. Schakel in de GitHub-repository onder **Settings → Pages** de publicatiebron **GitHub Actions** in. Na de eerste workflow-run staat de app op de Pages-URL van de repository.
 
 Test de Pages-build lokaal met `npm.cmd run build:pages`; de statische bestanden komen in `dist/pages`. De gepubliceerde WASM-bestanden zijn samen ongeveer 200 MB, al downloadt de browser die niet allemaal tegelijk. De eerste modeldownload kan ook groot zijn.
@@ -40,7 +42,7 @@ De browser vraagt toestemming voor de microfoon en, als je computergeluid kiest,
 
 Je kunt vóór de opname één Word-document (`.docx`), PDF of tekstbestand (`.txt`) toevoegen als context. De tekst wordt lokaal naar Markdown omgezet en samen met de transcriptie opgenomen in de gekopieerde of gedownloade `.md`-uitvoer. De documentinhoud wordt niet gebruikt om de spraakherkenning te sturen of te corrigeren. PDF's moeten selecteerbare tekst bevatten; scans en afbeeldingen worden niet met OCR uitgelezen.
 
-Er staan standaard twee sprekers klaar. Vul vóór de opname hun namen in, in de volgorde waarin ze voor het eerst aan het woord komen; voeg zo nodig extra sprekers toe. Een leeg naamveld houdt het standaardlabel aan. De namen verschijnen in de transcriptie en in de gekopieerde tekst. Er staan ook vijf onderwerpen klaar: Onderwerp 1 t/m Onderwerp 5. Je kunt de namen aanpassen, verwijderen of extra onderwerpen toevoegen. De zinnen worden eerst onder het eerste onderwerp gezet. Sleep een zin aan de tijdsaanduiding naar het juiste onderwerp; je kunt ook het keuzemenu gebruiken. Verwijder alle onderwerpen als je de transcriptie zonder onderwerpblokken wilt zien. Je kunt de tekst per zin bewerken; Kopieer Markdown neemt de onderwerpen en wijzigingen mee. De sprekerlabels volgen de volgorde waarin Who sprekers voor het eerst hoort; de herkenning geeft geen zekerheid over iemands identiteit. Diarisatie is in bèta, dus bij opnames met veel ruis, overlappende spraak en vergelijkbare stemmen kunnen labels onjuist zijn. Een woord zonder duidelijke spreker-match wordt gemarkeerd als Onbekend.
+Er staan standaard drie workshoprollen klaar: Privacy officer, Burger en Use case houder. Vink de rollen aan die meedoen en pas de namen aan of voeg zelf rollen toe. De gekozen labels worden gekoppeld in de volgorde waarin sprekers voor het eerst aan het woord komen; een leeg naamveld krijgt een standaardlabel. Je kunt vóór het starten ook een microfoon kiezen. De namen verschijnen in de transcriptie en in de gekopieerde tekst. Je kunt de tekst per zin bewerken; Kopieer Markdown neemt de wijzigingen mee. De sprekerlabels volgen de volgorde waarin Who sprekers voor het eerst hoort; de herkenning geeft geen zekerheid over iemands identiteit. Diarisatie is in bèta, dus bij opnames met veel ruis, overlappende spraak en vergelijkbare stemmen kunnen labels onjuist zijn. Een woord zonder duidelijke spreker-match wordt gemarkeerd als Onbekend.
 
 ## Opdrachtregelinterface
 
