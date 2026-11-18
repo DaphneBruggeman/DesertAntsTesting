@@ -645,6 +645,32 @@ const styles = [
   }
   `,
   String.raw`
+  /* Opnameknop: hoger zodat hij meer opvalt */
+  .recording-actions .transcribe-button { min-height: 60px; padding-top: 16px; padding-bottom: 16px; font-size: 15px; }
+  .recording-actions .record-button-dot { width: 12px; height: 12px; }
+  @media (min-width: 761px) and (max-height: 820px) {
+    .recording-actions .transcribe-button { min-height: 50px; padding-top: 12px; padding-bottom: 12px; font-size: 14px; }
+  }
+  @media (min-width: 761px) and (max-height: 680px) {
+    .recording-actions .transcribe-button { min-height: 42px; padding-top: 9px; padding-bottom: 9px; font-size: 13px; }
+  }
+
+  /* Rollenblok neemt de vrije ruimte; documentblok krijgt alleen de hoogte van zijn inhoud.
+     Bij veel rollen scrolt de lijst binnen het blok in plaats van de pagina te verlengen. */
+  .speaker-input-row { grid-template-columns: 22px 24px minmax(0, 1fr) 30px; }
+  @media (min-width: 761px) {
+    .setup-column { grid-template-rows: minmax(0, 1fr) auto; }
+    .role-card { display: flex; min-height: 190px; flex-direction: column; contain: size; }
+    .role-card .speaker-input-list { min-height: 0; flex: 0 1 auto; margin: 8px -5px 0; padding: 4px 5px; overflow-y: auto; }
+    .role-card > .setup-action-button { flex: none; align-self: flex-start; }
+  }
+
+  /* Rolnamen verplicht */
+  .speaker-input.is-invalid { border: 2px solid #d52b1e; background: #fff5f4; }
+  .speaker-input.is-invalid:focus { border-color: #d52b1e; outline-color: #f4b7b2; }
+  .ready-checklist.has-error { border-left-color: #d52b1e; background: #fdf1f0; }
+  .ready-error { color: #a3190e; font-weight: 700; }
+
   /* Workshopscherm */
   .session-titlebar { gap: 22px; }
   .session-heading { min-width: 0; }
@@ -941,6 +967,7 @@ const browserApp = [
   "  microphoneReady.textContent = audioInputDevice.value\r",
   "    ? `✓ ${audioInputDevice.selectedOptions[0].textContent} geselecteerd`\r",
   "    : \"✓ Microfoon wordt gecontroleerd bij start\";\r",
+  "  updateRoleNameValidation();\r",
   "}\r",
   "\r",
   "function setAudioLevel(level) {\r",
@@ -1509,7 +1536,11 @@ const browserApp = [
   "}\r",
   "\r",
   "startButton.addEventListener(\"click\", () => {\r",
-  "  speakerNames = [...speakerInputList.querySelectorAll(\".speaker-input-row\")]\r",
+  "  if (!updateRoleNameValidation()) {\r",
+  "    focusFirstMissingRoleName();\r",
+  "    return;\r",
+  "  }\r",
+  "  speakerNames =[...speakerInputList.querySelectorAll(\".speaker-input-row\")]\r",
   "    .filter((row) => row.querySelector(\".role-checkbox input\").checked)\r",
   "    .map((row, index) => row.querySelector(\".speaker-input\").value.trim() || `Spreker ${index + 1}`);\r",
   "  void startRecording();\r",
@@ -1529,7 +1560,7 @@ const browserApp = [
   "  checkboxLabel.append(checkbox);\r",
   "  const label = document.createElement(\"span\");\r",
   "  label.className = \"speaker-number\";\r",
-  "  label.textContent = String(number).padStart(2, \"0\");\r",
+  "  label.textContent = `${number}.`;\r",
   "  const input = document.createElement(\"input\");\r",
   "  input.className = \"speaker-input\";\r",
   "  input.type = \"text\";\r",
@@ -1565,7 +1596,7 @@ const browserApp = [
   "    checkbox.id = `role-enabled-${number}`;\r",
   "    checkboxLabel.htmlFor = checkbox.id;\r",
   "    checkbox.setAttribute(\"aria-label\", `Rol ${number} meenemen`);\r",
-  "    numberLabel.textContent = String(number).padStart(2, \"0\");\r",
+  "    numberLabel.textContent = `${number}.`;\r",
   "    input.id = `speaker-name-${number}`;\r",
   "    input.placeholder = `Naam van rol ${number}`;\r",
   "    input.setAttribute(\"aria-label\", `Naam van rol ${number}`);\r",
@@ -1576,10 +1607,12 @@ const browserApp = [
   "addSpeakerInput(1, \"Privacy officer\");\r",
   "addSpeakerInput(2, \"Burger\");\r",
   "addSpeakerInput(3, \"Use case houder\");\r",
+  "addSpeakerInput(4, \"Innovation scout\");\r",
   "addSpeakerButton.addEventListener(\"click\", () => {\r",
   "  addSpeakerInput(speakerInputList.querySelectorAll(\".speaker-input-row\").length + 1);\r",
   "});\r",
   "speakerInputList.addEventListener(\"change\", updateReadiness);\r",
+  "speakerInputList.addEventListener(\"input\", updateReadiness);\r",
   "audioInputDevice.addEventListener(\"change\", updateReadiness);\r",
   "void refreshAudioInputs().catch((error) => showError(`Microfoons konden niet worden geladen: ${error instanceof Error ? error.message : String(error)}`));\r",
   "navigator.mediaDevices?.addEventListener(\"devicechange\", () => {\r",
@@ -1802,6 +1835,74 @@ const downloadButtonLabel = document.querySelector("#download-button-label");
 const separateOption = document.querySelector('input[name="download-split"][value="separate"]');
 
 const modelStatus = document.querySelector("#model-status");
+
+// --- Rollen moeten een naam hebben ---
+// Let op: wordt al aangeroepen voordat dit blok is uitgevoerd (bij het aanmaken van de standaardrollen),
+// dus hier geen const's van bovenaan dit blok gebruiken.
+function missingRoleNameInputs() {
+  return [...speakerInputList.querySelectorAll(".speaker-input")].filter((input) => !input.value.trim());
+}
+
+// Geeft true terug als alle rollen een naam hebben.
+function updateRoleNameValidation() {
+  const roleNamesReady = document.querySelector("#role-names-ready");
+  const readyChecklist = document.querySelector(".ready-checklist");
+  const inputs =[...speakerInputList.querySelectorAll(".speaker-input")];
+  const missing = missingRoleNameInputs();
+  inputs.forEach((input) => {
+    const isMissing = missing.includes(input);
+    input.classList.toggle("is-invalid", isMissing);
+    if (isMissing) {
+      input.setAttribute("aria-invalid", "true");
+      input.setAttribute("aria-describedby", "role-names-ready");
+    } else {
+      input.removeAttribute("aria-invalid");
+      input.removeAttribute("aria-describedby");
+    }
+  });
+  const numbers = missing.map((input) => String(inputs.indexOf(input) + 1));
+  // Een workshop heeft minstens twee deelnemers nodig, dus minstens twee aangevinkte rollen.
+  const MIN_ROLES = 2;
+  const rolesReady = document.querySelector("#roles-ready");
+  const checkedCount =speakerInputList.querySelectorAll(".role-checkbox input:checked").length;
+  const noRoles = checkedCount < MIN_ROLES;
+  rolesReady.classList.toggle("ready-error", noRoles);
+  if (noRoles) {
+    const need = "Een workshop heeft minstens " + MIN_ROLES + " rollen nodig: ";
+    if (!inputs.length) rolesReady.textContent = "✗ Geen rollen toegevoegd. " + need + "voeg rollen toe.";
+    else if (inputs.length < MIN_ROLES) rolesReady.textContent = "✗ Maar " + inputs.length + " rol toegevoegd. " + need + "voeg nog een rol toe.";
+    else if (checkedCount === 0) rolesReady.textContent = "✗ Geen rollen aangevinkt. " + need + "vink minstens " + MIN_ROLES + " rollen aan.";
+    else rolesReady.textContent = "✗ Maar " + checkedCount + " rol aangevinkt. " + need + "vink nog een rol aan of voeg er een toe.";
+  }
+  roleNamesReady.hidden = missing.length === 0;
+  const isValid = missing.length === 0 && !noRoles;
+  readyChecklist.classList.toggle("has-error", !isValid);
+  if (missing.length) {
+    roleNamesReady.textContent = "✗ " + (missing.length === 1
+      ? "Rol " + numbers[0] + " heeft nog geen naam."
+      : "Rol " + joinTitles(numbers) + " hebben nog geen naam.") + " Vul een naam in of verwijder de rol.";
+  }
+  if (!isValid) {
+    startButton.disabled = true;
+    startButton.dataset.blockedByRoles = "true";
+  } else if (startButton.dataset.blockedByRoles) {
+    delete startButton.dataset.blockedByRoles;
+    startButton.disabled = isConvertingDocument;
+  }
+  return isValid;
+}
+
+function focusFirstMissingRoleName() {
+  const firstMissing = missingRoleNameInputs()[0];
+  if (firstMissing) firstMissing.focus();
+  else (speakerInputList.querySelector(".role-checkbox input:not(:checked)") ?? addSpeakerButton).focus();
+}
+
+// Nieuwe rol: direct in het naamveld zetten (en in beeld scrollen als de lijst scrolt).
+addSpeakerButton.addEventListener("click", () => {
+  const inputs = speakerInputList.querySelectorAll(".speaker-input");
+  inputs[inputs.length - 1]?.focus();
+});
 
 // --- Modellen laden: start al tijdens de opname, zodat het afronden niet hoeft te wachten ---
 let activeModelWait = null;
