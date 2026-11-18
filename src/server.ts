@@ -1730,8 +1730,11 @@ async function buildBrowserBundle(): Promise<string> {
 async function buildPages(): Promise<void> {
   const outputDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "pages");
   await mkdir(outputDirectory, { recursive: true });
-  const assetVersion = process.env.GITHUB_SHA ?? "local";
-  const versionedPageHtml = pageHtml.replace("./app.js", `./app.js?v=${assetVersion}`);
+  const assetVersion = process.env.GITHUB_SHA ?? String(Date.now());
+  const versionedPageHtml = pageHtml
+    .replace("./app.js", `./app.js?v=${assetVersion}`)
+    .replace("./styles.css", `./styles.css?v=${assetVersion}`)
+    .replace("./RVB-logo.png", `./RVB-logo.png?v=${assetVersion}`);
   await writeFile(join(outputDirectory, "index.html"), versionedPageHtml);
   await writeFile(join(outputDirectory, "styles.css"), styles);
   await writeFile(join(outputDirectory, "app.js"), await buildBrowserBundle());
