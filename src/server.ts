@@ -889,6 +889,16 @@ const styles = [
     .usecase-row { grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; }
     .usecase-icon { display: none; }
   }
+
+  /* Meer ruimte boven de footer (de footer zelf staat met margin-top: auto onderaan).
+     Staat bewust als laatste, zodat het de eerdere marges van de schermen overschrijft. */
+  .workspace, .session-view, .download-view, .error-message { margin-bottom: 28px; }
+  @media (min-width: 761px) and (max-height: 820px) {
+    .workspace, .session-view, .download-view, .error-message { margin-bottom: 20px; }
+  }
+  @media (min-width: 761px) and (max-height: 680px) {
+    .workspace, .session-view, .download-view, .error-message { margin-bottom: 14px; }
+  }
   `,
   "",
 ].join("\n");
