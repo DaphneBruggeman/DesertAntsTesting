@@ -60,3 +60,14 @@ Dit project volgt het Node-gebruik van Voz zoals beschreven in `docs/models/voz.
 * `voz.transcribe(input, { onProgress })` transcribeert de opname lokaal en rapporteert de voortgang.
 * `result.words` bevat items van de vorm `{ text, start, end }`, met tijden in seconden.
 * `Who.load()` en `who.diarize(input)` in de browser bepalen lokaal de spreekbeurten; de woordtijdstempels van Voz worden aan die beurten gekoppeld.
+
+## Live transcriptie (experimenteel, branch `voxtral-live`)
+
+Op de startpagina kun je **Live transcriptie** aanzetten. De app gebruikt dan [Voxtral Mini 4B Realtime](https://huggingface.co/mistralai/Voxtral-Mini-4B-Realtime-2602) (Apache 2.0) via transformers.js op de videokaart (WebGPU). De tekst verschijnt tijdens de opname; na het afronden draait alleen nog de sprekerherkenning.
+
+* Het model wordt geladen zodra de optie aan staat, dus al vóór de workshop. De keuze wordt onthouden, zodat het model bij een volgend bezoek automatisch (uit de browsercache) laadt.
+* De eerste keer wordt ongeveer 2,8 GB gedownload (q4f16-variant). Daarna komt het uit de cache, maar het klaarzetten op de videokaart gebeurt bij elke paginalading.
+* Vereist een browser en laptop met WebGPU en voldoende videogeheugen. Zonder WebGPU, of als het model bij het afronden nog niet klaar is, valt de app terug op de gewone transcriptie (Voz).
+* Haalt de videokaart geen real time, dan loopt de live tekst achter; het opnamescherm toont hoeveel. Na het afronden wordt die achterstand eerst ingehaald.
+* Tijden per woord zijn geschat uit het tempo van het model (80 ms per stap) en zijn dus bij benadering. Lange gesprekken worden per 4 minuten verwerkt; op die grenzen kan een woord wegvallen.
+* De ONNX Runtime-bestanden van transformers.js worden door de eigen server geleverd (`/transformers-ort/`), niet via een CDN. Het model zelf wordt van huggingface.co gedownload.

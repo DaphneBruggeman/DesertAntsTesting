@@ -115,12 +115,21 @@
               <input id="include-system-audio" type="checkbox">
               <span><strong>Neem ook het geluid van de laptop op</strong><small>Handig bij een online vergadering. Je browser vraagt om een tabblad of scherm te delen en audio toe te staan.</small></span>
             </label>
+            <label class="capture-option live-option" for="use-live-transcription">
+              <input id="use-live-transcription" type="checkbox">
+              <span>
+                <strong>Live transcriptie <em class="option-tag">Experimenteel</em></strong>
+                <small>Gebruikt het Voxtral-model op de videokaart (WebGPU). De eerste keer wordt ± 2,8 GB gedownload; daarna komt het uit de cache.</small>
+                <span class="live-model-progress" id="live-model-progress" hidden><span class="live-model-progress-fill" id="live-model-progress-fill"></span></span>
+              </span>
+            </label>
             <div class="ready-checklist" aria-live="polite">
               <strong>Klaar om te starten?</strong>
               <span id="roles-ready">✓ 0 rollen gekozen</span>
               <span class="ready-error" id="role-names-ready" hidden></span>
               <span id="document-ready">○ Document niet toegevoegd (optioneel)</span>
               <span id="microphone-ready">✓ Microfoon wordt gecontroleerd bij start</span>
+              <span id="live-ready" hidden></span>
             </div>
             <div class="recording-status-row">
               <p class="recording-status" id="recording-status">Klaar om op te nemen</p>
@@ -176,6 +185,8 @@
             <div class="role-chips" id="session-role-chips"></div>
             <div class="transcript-panel-body">
               <p class="live-placeholder is-live" id="live-placeholder">Opname loopt. De transcriptie verschijnt zodra u het gesprek afrondt.</p>
+              <p class="live-lag" id="live-lag" aria-live="polite" hidden></p>
+              <p class="live-transcript" id="live-transcript" hidden></p>
               <p class="model-status" id="model-status" aria-live="polite" hidden></p>
             </div>
           </section>

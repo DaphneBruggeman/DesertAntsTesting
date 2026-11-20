@@ -1,6 +1,7 @@
 import { Voz } from "@desert-ant-labs/voz";
 import * as ort from "onnxruntime-node";
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -18,6 +19,10 @@ const litertWasmDirectory = join(dirname(require.resolve("@litertjs/core")), "..
 const vozWasmPath = require.resolve("@desert-ant-labs/voz/wasm");
 const pdfWorkerPath = require.resolve("pdfjs-dist/legacy/build/pdf.worker.min.mjs");
 const onnxRuntimeDirectory = dirname(require.resolve("onnxruntime-web/webgpu"));
+// transformers.js heeft een eigen (nieuwere) onnxruntime-web met dezelfde bestandsnamen; die leveren we vanaf /transformers-ort/.
+const transformersPackageDirectory = join(dirname(require.resolve("@huggingface/transformers")), "..");
+const nestedTransformersOrt = join(transformersPackageDirectory, "node_modules", "onnxruntime-web", "dist");
+const transformersOrtDirectory = existsSync(nestedTransformersOrt) ? nestedTransformersOrt : onnxRuntimeDirectory;
 const pageHtml = await readFile(resolve(dirname(fileURLToPath(import.meta.url)), "../index.html"), "utf8");
 const organizationLogoPath = resolve(dirname(fileURLToPath(import.meta.url)), "../public/RVB-logo.png");
 const styles = [
@@ -645,6 +650,15 @@ const styles = [
   }
   `,
   String.raw`
+  /* Live transcriptie (experimenteel) */
+  .live-option .option-tag { margin-left: 6px; }
+  .live-model-progress { display: block; height: 5px; margin-top: 6px; overflow: hidden; border-radius: 99px; background: #e6e6e6; }
+  .live-model-progress-fill { display: block; width: 0; height: 100%; border-radius: inherit; background: #007bc7; transition: width .25s ease; }
+  .ready-warning { color: #8a4b00; }
+  .live-lag { margin: 10px 0 0; padding: 7px 10px; border-left: 3px solid #e17000; color: #353535; background: #fff4e8; font-size: 11.5px; line-height: 1.45; }
+  .live-transcript { margin: 12px 0 0; color: #111; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .live-transcript.is-live::after { content: ""; display: inline-block; width: 7px; height: 14px; margin-left: 3px; vertical-align: -2px; background: #353535; animation: caret-blink 1s steps(1) infinite; }
+
   /* Opnameknop: hoger zodat hij meer opvalt */
   .recording-actions .transcribe-button { min-height: 60px; padding-top: 16px; padding-bottom: 16px; font-size: 15px; }
   .recording-actions .record-button-dot { width: 12px; height: 12px; }
@@ -1409,6 +1423,7 @@ const browserApp = [
   "        }\r",
   "      }\r",
   "      appendSamples(outputSamples, audioContext.sampleRate);\r",
+  "      forwardLiveAudio();\r",
   "      const now = Date.now();\r",
   "      if (now - lastAudioLevelUpdate >= 100) {\r",
   "        let energy = 0;\r",
@@ -1974,26 +1989,35 @@ function resetTranscriberWorker() {
 function preloadModels() {
   modelStatus.hidden = false;
   modelStatus.classList.remove("is-ready", "is-failed");
-  if (modelsPreloaded && transcriberWorker) {
-    setModelsReady();
-    return;
-  }
   modelsPreloaded = false;
   modelStatus.textContent = "Spraakmodellen worden alvast geladen...";
-  getTranscriberWorker().postMessage({ type: "preload", litertWasmDir: litertWasmDir() });
+  // Met live transcriptie is alleen het sprekermodel nog nodig (Voz alleen als terugvaloptie).
+  // De worker onthoudt geladen modellen, dus opnieuw vragen is direct klaar.
+  const liveWanted = liveCheckbox.checked && liveState !== "failed";
+  getTranscriberWorker().postMessage({ type: liveWanted ? "preload-who" : "preload", litertWasmDir: litertWasmDir() });
 }
 
-function runTranscriptionJob(audio) {
+// Zonder woorden: volledige transcriptie (Voz) + sprekers. Met woorden (van de live transcriptie): alleen sprekers.
+function runTranscriptionJob(audio, words) {
   return new Promise((resolve, reject) => {
     const id = ++transcriptionJobId;
     pendingJob = { id, resolve, reject };
-    getTranscriberWorker().postMessage({ type: "transcribe", id, audio, litertWasmDir: litertWasmDir() });
+    getTranscriberWorker().postMessage(words
+      ? { type: "diarize", id, audio, words, litertWasmDir: litertWasmDir() }
+      : { type: "transcribe", id, audio, litertWasmDir: litertWasmDir() });
   });
 }
 
 // Breekt een lopende transcriptie echt af door de worker te stoppen.
 // De modellen worden bij een volgende workshop opnieuw geladen (uit de browsercache).
 function cancelTranscription() {
+  if (liveFinish) {
+    const finish = liveFinish;
+    liveFinish = null;
+    if (voxtralWorker) voxtralWorker.postMessage({ type: "cancel" });
+    finish.reject(TRANSCRIPTION_CANCELLED);
+    return true;
+  }
   if (!pendingJob) return false;
   const job = pendingJob;
   pendingJob = null;
@@ -2012,7 +2036,8 @@ async function submitRecording(audio) {
   progressIcon.classList.remove("complete-icon");
   setProgress({ stage: "loading_model", message: "Voz-model klaarmaken..." });
   try {
-    const message = await runTranscriptionJob(audio);
+    // Live transcriptie gelukt? Dan alleen nog sprekers herkennen; anders de gewone transcriptie.
+    const message = (liveActive ? await finishLiveTranscription(audio) : null) ?? await runTranscriptionJob(audio);
     const result = message.result;
     if (message.diarizeError) {
       showError("Transcriptie is klaar, maar sprekerherkenning is mislukt: " + message.diarizeError);
@@ -2472,6 +2497,7 @@ function enterSessionView() {
   livePlaceholder.classList.add("is-live");
   livePlaceholder.textContent = "Opname loopt. De transcriptie wordt gemaakt zodra u het gesprek afrondt.";
   updateSessionClock();
+  startLiveSession();
   preloadModels();
   setupTitlebar.hidden = true;
   privacyBanner.hidden = true;
@@ -2535,7 +2561,8 @@ function togglePause() {
   livePlaceholder.classList.toggle("is-live", !isPaused);
   livePlaceholder.textContent = isPaused
     ? "Opname gepauzeerd. Er wordt nu niets opgenomen."
-    : "Opname loopt. De transcriptie wordt gemaakt zodra u het gesprek afrondt.";
+    : runningPlaceholderText();
+  liveTranscript.classList.toggle("is-live", liveActive && !isPaused);
   setAudioLevel(0);
   updateSessionClock();
 }
@@ -2634,6 +2661,218 @@ deleteWorkshopButton.addEventListener("click", () => {
   window.alert("Workshop verwijderd en niet opgeslagen.");
   showSetupView();
 });
+
+// --- Live transcriptie met Voxtral (experimenteel, branch voxtral-live) ---
+// Het model laadt al op de startpagina zodra de optie aan staat, zodat het klaarstaat als de workshop begint.
+const liveCheckbox = document.querySelector("#use-live-transcription");
+const liveReady = document.querySelector("#live-ready");
+const liveProgressBar = document.querySelector("#live-model-progress");
+const liveProgressFill = document.querySelector("#live-model-progress-fill");
+const liveTranscript = document.querySelector("#live-transcript");
+const liveLag = document.querySelector("#live-lag");
+const LIVE_STORAGE_KEY = "voz-transcriber.liveTranscription";
+
+let voxtralWorker = null;
+let liveState = "off"; // off | loading | ready | failed
+let liveProgress = 0;
+let liveInitializing = false;
+let liveError = "";
+let liveActive = false; // er loopt een live sessie tijdens deze opname
+let liveForwardedChunks = 0;
+let liveFinish = null; // wacht op het "done"-bericht na het afronden
+
+function getVoxtralWorker() {
+  if (!voxtralWorker) {
+    voxtralWorker = new Worker(new URL("./voxtral-worker.js", document.baseURI), { type: "module" });
+    voxtralWorker.addEventListener("message", handleVoxtralMessage);
+    voxtralWorker.addEventListener("error", (event) => {
+      event.preventDefault();
+      if (voxtralWorker) voxtralWorker.terminate();
+      voxtralWorker = null;
+      liveFailed(event.message || "De achtergrondverwerking is gestopt.");
+    });
+  }
+  return voxtralWorker;
+}
+
+function liveFailed(message) {
+  liveState = "failed";
+  liveError = message;
+  liveInitializing = false;
+  if (liveFinish) {
+    const finish = liveFinish;
+    liveFinish = null;
+    finish.reject(new Error(message));
+  }
+  if (liveActive) {
+    liveActive = false;
+    liveTranscript.classList.remove("is-live");
+    livePlaceholder.hidden = false;
+    livePlaceholder.classList.remove("is-live");
+    livePlaceholder.textContent = "Live transcriptie is gestopt (" + message + "). Na het afronden wordt de gewone transcriptie gebruikt.";
+  }
+  updateLiveStatus();
+}
+
+function handleVoxtralMessage(event) {
+  const message = event.data;
+  if (message.type === "load-progress") {
+    liveState = "loading";
+    liveProgress = message.progress;
+    liveInitializing = message.phase === "init";
+    updateLiveStatus();
+  } else if (message.type === "ready") {
+    liveState = "ready";
+    liveProgress = 1;
+    liveInitializing = false;
+    updateLiveStatus();
+    if (liveActive && !liveTranscript.textContent) livePlaceholder.textContent = runningPlaceholderText();
+  } else if (message.type === "load-error" || message.type === "session-error") {
+    liveFailed(message.message);
+  } else if (message.type === "text") {
+    appendLiveText(message.text);
+  } else if (message.type === "position") {
+    updateLivePosition(message);
+  } else if (message.type === "done" && liveFinish) {
+    const finish = liveFinish;
+    liveFinish = null;
+    finish.resolve(message);
+  }
+}
+
+function updateLiveStatus() {
+  const enabled = liveCheckbox.checked;
+  liveReady.hidden = !enabled;
+  liveReady.classList.remove("ready-warning");
+  liveProgressBar.hidden = !(enabled && liveState === "loading" && !liveInitializing);
+  liveProgressFill.style.width = Math.round(liveProgress * 100) + "%";
+  if (!enabled) return;
+  if (liveState === "ready") {
+    liveReady.textContent = "✓ Live transcriptie staat klaar";
+  } else if (liveState === "failed") {
+    liveReady.classList.add("ready-warning");
+    liveReady.textContent = "○ Live transcriptie niet beschikbaar: " + liveError + " De gewone transcriptie wordt gebruikt.";
+  } else if (liveInitializing) {
+    liveReady.textContent = "○ Live-model wordt klaargezet op de videokaart...";
+  } else {
+    liveReady.textContent = "○ Live-model wordt geladen: " + Math.round(liveProgress * 100) + "% (u kunt al starten)";
+  }
+}
+
+function setLiveEnabled(enabled) {
+  try { window.localStorage.setItem(LIVE_STORAGE_KEY, enabled ? "1" : "0"); } catch {}
+  if (enabled) {
+    if (liveState === "off" || liveState === "failed") {
+      liveState = "loading";
+      liveProgress = 0;
+      liveInitializing = false;
+      getVoxtralWorker().postMessage({ type: "load" });
+    }
+  } else {
+    // Uitzetten geeft het geheugen van de videokaart weer vrij.
+    if (voxtralWorker) voxtralWorker.terminate();
+    voxtralWorker = null;
+    liveState = "off";
+    liveProgress = 0;
+  }
+  updateLiveStatus();
+}
+
+function runningPlaceholderText() {
+  if (!liveActive) return "Opname loopt. De transcriptie wordt gemaakt zodra u het gesprek afrondt.";
+  return liveState === "ready"
+    ? "Live transcriptie loopt. De tekst verschijnt hier terwijl er gesproken wordt."
+    : "Het live-model wordt nog geladen. Daarna haalt de transcriptie de opname in.";
+}
+
+function startLiveSession() {
+  liveForwardedChunks = 0;
+  liveTranscript.textContent = "";
+  liveTranscript.hidden = true;
+  liveLag.hidden = true;
+  livePlaceholder.hidden = false;
+  liveActive = liveCheckbox.checked && liveState !== "failed" && liveState !== "off";
+  liveTranscript.classList.toggle("is-live", liveActive);
+  if (!liveActive) return;
+  getVoxtralWorker().postMessage({ type: "start" });
+  livePlaceholder.textContent = runningPlaceholderText();
+}
+
+// Wordt aangeroepen vanuit de opname (onaudioprocess): stuurt nieuwe 16 kHz-samples naar de Voxtral-worker.
+function forwardLiveAudio() {
+  if (!liveActive || !voxtralWorker) return;
+  while (liveForwardedChunks < recordingChunks.length) {
+    const chunk = recordingChunks[liveForwardedChunks++];
+    const samples = new Float32Array(chunk.length);
+    for (let i = 0; i < chunk.length; i++) samples[i] = chunk[i] / 32768;
+    voxtralWorker.postMessage({ type: "audio", samples }, [samples.buffer]);
+  }
+}
+
+// Toont hoeveel de live transcriptie achterloopt (tijdens de opname) of hoe ver het inhalen is (na afronden).
+let liveFinishAudioSeconds = 0;
+function updateLivePosition({ seconds, stepsPerSecond, realtimeStepsPerSecond }) {
+  const speed = stepsPerSecond / realtimeStepsPerSecond;
+  liveLag.dataset.speed = speed.toFixed(2);
+  if (liveFinish) {
+    const progress = liveFinishAudioSeconds ? Math.min(seconds / liveFinishAudioSeconds, 1) : undefined;
+    setProgress({
+      stage: "transcribing",
+      progress,
+      message: "Live transcriptie haalt de opname in: " + formatTime(seconds) + " van " + formatTime(liveFinishAudioSeconds) + " (" + Math.round(speed * 100) + "% van real time)",
+    });
+    return;
+  }
+  if (!liveActive) return;
+  const lag = Math.max(0, recordingElapsedSeconds() - seconds);
+  liveLag.hidden = lag < 5;
+  liveLag.textContent = "De live tekst loopt " + Math.round(lag) + " seconden achter op de opname (snelheid " + Math.round(speed * 100) + "% van real time).";
+}
+
+function appendLiveText(text) {
+  if (!liveActive && !liveFinish) return;
+  const body = liveTranscript.parentElement;
+  const nearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+  livePlaceholder.hidden = true;
+  liveTranscript.hidden = false;
+  liveTranscript.textContent += text;
+  if (nearBottom) body.scrollTop = body.scrollHeight;
+}
+
+// Na "Gesprek afronden": wacht tot Voxtral de laatste audio heeft uitgeschreven en laat dan alleen
+// de sprekers herkennen. Geeft null terug als de gewone transcriptie moet worden gebruikt.
+async function finishLiveTranscription(audio) {
+  liveActive = false;
+  liveTranscript.classList.remove("is-live");
+  if (liveState !== "ready" || !voxtralWorker) {
+    if (voxtralWorker) voxtralWorker.postMessage({ type: "cancel" });
+    return null;
+  }
+  liveFinishAudioSeconds = recordingElapsedSeconds();
+  liveLag.hidden = true;
+  setProgress({ stage: "transcribing", message: "Laatste stuk van de live transcriptie afronden..." });
+  let live;
+  try {
+    live = await new Promise((resolve, reject) => {
+      liveFinish = { resolve, reject };
+      voxtralWorker.postMessage({ type: "end" });
+    });
+  } catch (error) {
+    if (error === TRANSCRIPTION_CANCELLED) throw error;
+    return null;
+  }
+  if (!live.words.length) return null;
+  return runTranscriptionJob(audio, live.words);
+}
+
+liveCheckbox.addEventListener("change", () => setLiveEnabled(liveCheckbox.checked));
+try {
+  if (window.localStorage.getItem(LIVE_STORAGE_KEY) === "1") {
+    liveCheckbox.checked = true;
+    setLiveEnabled(true);
+  }
+} catch {}
+updateLiveStatus();
 `,
   "",
 ].join("\n");
@@ -2712,6 +2951,48 @@ async function wavToSamples(blob) {
   return samples;
 }
 
+// Koppel elk woord aan de spreker met de meeste overlap in tijd.
+function assignSpeakers(words, diarization) {
+  return words.map((word) => {
+    const overlaps = new Map();
+    for (const turn of diarization.turns) {
+      const overlap = Math.max(0, Math.min(word.end, turn.end) - Math.max(word.start, turn.start));
+      if (overlap > 0) overlaps.set(turn.speaker, (overlaps.get(turn.speaker) ?? 0) + overlap);
+    }
+    let speaker = null;
+    let longestOverlap = 0;
+    for (const [candidate, overlap] of overlaps) {
+      if (overlap > longestOverlap) {
+        speaker = candidate;
+        longestOverlap = overlap;
+      }
+    }
+    return Object.assign({}, word, { speaker });
+  });
+}
+
+// Alleen sprekerherkenning, voor woorden die al live door Voxtral zijn uitgeschreven.
+async function diarizeOnly(id, audio, words, litertWasmDir) {
+  const startedAt = performance.now();
+  try {
+    const samples = await wavToSamples(audio);
+    const duration = samples.length / 16000;
+    const elapsed = () => (performance.now() - startedAt) / 1000;
+    try {
+      post("stage", { id, stage: "loading_speakers" });
+      const who = await ensureWho(litertWasmDir);
+      post("stage", { id, stage: "diarizing" });
+      const diarization = await who.diarize(samples, { sampleRate: 16000 });
+      post("result", { id, result: { words: assignSpeakers(words, diarization), speakerCount: diarization.speakerCount, duration, processingTime: elapsed() } });
+    } catch (error) {
+      const unlabeled = words.map((word) => Object.assign({}, word, { speaker: null }));
+      post("result", { id, result: { words: unlabeled, speakerCount: 0, duration, processingTime: elapsed() }, diarizeError: errorText(error) });
+    }
+  } catch (error) {
+    post("error", { id, message: errorText(error) });
+  }
+}
+
 function plainResult(result, words, speakerCount) {
   return { words, speakerCount, duration: result.duration, processingTime: result.processingTime };
 }
@@ -2732,23 +3013,7 @@ async function transcribe(id, audio, litertWasmDir) {
       // In een worker bestaat geen (Offline)AudioContext om audio te decoderen. Onze opname is een
       // 16 kHz mono 16-bit WAV (zie encodeWav), dus de samples kunnen we hier zelf uitlezen.
       const diarization = await who.diarize(await wavToSamples(audio), { sampleRate: 16000 });
-      const words = baseWords.map((word) => {
-        const overlaps = new Map();
-        for (const turn of diarization.turns) {
-          const overlap = Math.max(0, Math.min(word.end, turn.end) - Math.max(word.start, turn.start));
-          if (overlap > 0) overlaps.set(turn.speaker, (overlaps.get(turn.speaker) ?? 0) + overlap);
-        }
-        let speaker = null;
-        let longestOverlap = 0;
-        for (const [candidate, overlap] of overlaps) {
-          if (overlap > longestOverlap) {
-            speaker = candidate;
-            longestOverlap = overlap;
-          }
-        }
-        return Object.assign({}, word, { speaker });
-      });
-      post("result", { id, result: plainResult(result, words, diarization.speakerCount) });
+      post("result", { id, result: plainResult(result, assignSpeakers(baseWords, diarization), diarization.speakerCount) });
     } catch (error) {
       const words = baseWords.map((word) => Object.assign({}, word, { speaker: null }));
       post("result", { id, result: plainResult(result, words, 0), diarizeError: errorText(error) });
@@ -2765,8 +3030,276 @@ self.addEventListener("message", (event) => {
       .then(() => ensureWho(message.litertWasmDir))
       .then(() => post("preloaded", {}))
       .catch((error) => post("preload-error", { message: errorText(error) }));
+  } else if (message.type === "preload-who") {
+    ensureWho(message.litertWasmDir)
+      .then(() => post("preloaded", {}))
+      .catch((error) => post("preload-error", { message: errorText(error) }));
   } else if (message.type === "transcribe") {
     void transcribe(message.id, message.audio, message.litertWasmDir);
+  } else if (message.type === "diarize") {
+    void diarizeOnly(message.id, message.audio, message.words, message.litertWasmDir);
+  }
+});
+`;
+
+// Web worker voor live transcriptie met Voxtral Mini 4B Realtime (WebGPU, experimenteel).
+// Staat in String.raw: geen backticks of dollar-accolade gebruiken.
+const voxtralWorker = String.raw`
+import {
+  env,
+  BaseStreamer,
+  VoxtralRealtimeForConditionalGeneration,
+  VoxtralRealtimeProcessor,
+} from "@huggingface/transformers";
+
+// ONNX Runtime-bestanden van onze eigen server, niet van een CDN.
+env.backends.onnx.wasm.wasmPaths = new URL("./transformers-ort/", self.location.href).href;
+
+const MODEL_ID = "onnx-community/Voxtral-Mini-4B-Realtime-2602-ONNX";
+const SAMPLE_RATE = 16000;
+const MODEL_FILE_COUNT = 3;
+// Voxtral geeft tekst met een kleine vertraging t.o.v. de audio (aanbevolen instelling: 480 ms).
+const TRANSCRIPTION_DELAY_SECONDS = 0.48;
+// Lange gesprekken worden in stukken verwerkt, zodat het geheugen (KV-cache) niet blijft groeien.
+const SEGMENT_SECONDS = 240;
+// Extra stilte aan het einde, zodat de laatste woorden (die met vertraging komen) nog worden uitgeschreven.
+const END_PADDING_SECONDS = 2;
+
+let loadPromise;
+let model;
+let processor;
+let session = null;
+
+function post(type, data) {
+  self.postMessage(Object.assign({ type }, data));
+}
+
+function errorText(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function waitUntil(condition) {
+  return new Promise((resolve) => {
+    if (condition()) return resolve();
+    const timer = setInterval(() => {
+      if (condition()) {
+        clearInterval(timer);
+        resolve();
+      }
+    }, 40);
+  });
+}
+
+function load() {
+  if (!loadPromise) {
+    loadPromise = (async () => {
+      if (!navigator.gpu) throw new Error("WebGPU is niet beschikbaar in deze browser.");
+      const adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) throw new Error("Er is geen geschikte videokaart (WebGPU) gevonden.");
+      const progressByFile = new Map();
+      const loadedModel = await VoxtralRealtimeForConditionalGeneration.from_pretrained(MODEL_ID, {
+        dtype: { audio_encoder: "q4f16", embed_tokens: "q4f16", decoder_model_merged: "q4f16" },
+        device: "webgpu",
+        progress_callback: (info) => {
+          if (info.status !== "progress" || !info.file || !info.file.endsWith(".onnx_data") || !info.total) return;
+          progressByFile.set(info.file, info.loaded / info.total);
+          let sum = 0;
+          for (const value of progressByFile.values()) sum += value;
+          post("load-progress", { progress: Math.min(sum / MODEL_FILE_COUNT, 1) });
+        },
+      });
+      post("load-progress", { progress: 1, phase: "init" });
+      const loadedProcessor = await VoxtralRealtimeProcessor.from_pretrained(MODEL_ID);
+      model = loadedModel;
+      processor = loadedProcessor;
+      post("ready", {});
+    })();
+    loadPromise.catch((error) => {
+      loadPromise = undefined;
+      post("load-error", { message: errorText(error) });
+    });
+  }
+  return loadPromise;
+}
+
+// Groeiende audiobuffer met absolute sample-indexen; oude audio wordt weggegooid zodra die verwerkt is.
+class SampleBuffer {
+  constructor() {
+    this.data = new Float32Array(SAMPLE_RATE * 30);
+    this.start = 0;
+    this.end = 0;
+  }
+  push(samples) {
+    const used = this.end - this.start;
+    if (used + samples.length > this.data.length) {
+      const next = new Float32Array(Math.max(this.data.length * 2, used + samples.length));
+      next.set(this.data.subarray(0, used));
+      this.data = next;
+    }
+    this.data.set(samples, used);
+    this.end += samples.length;
+  }
+  slice(from, to) {
+    return this.data.slice(from - this.start, to - this.start);
+  }
+  dropBefore(index) {
+    const drop = index - this.start;
+    if (drop < SAMPLE_RATE * 5) return;
+    this.data.copyWithin(0, drop, this.end - this.start);
+    this.start = index;
+  }
+}
+
+function addText(current, delta, time) {
+  current.text += delta;
+  for (const part of delta.split(/(\s+)/)) {
+    if (!part) continue;
+    if (/^\s+$/.test(part)) {
+      current.atWordStart = true;
+      continue;
+    }
+    const last = current.words[current.words.length - 1];
+    if (current.atWordStart || !last) {
+      if (last) last.end = Math.max(last.start, time);
+      current.words.push({ text: part, start: time, end: time + 0.08 });
+      current.atWordStart = false;
+    } else {
+      last.text += part;
+      last.end = time + 0.08;
+    }
+  }
+  post("text", { text: delta });
+}
+
+// Verwerkt een stuk van maximaal SEGMENT_SECONDS, beginnend bij sample segmentStart.
+// Geeft de sample-index terug waar het volgende stuk moet beginnen, of null als de audio op is.
+async function runSegment(current, segmentStart) {
+  const proc = processor;
+  const firstSamples = proc.num_samples_first_audio_chunk;
+  await waitUntil(() => current.buffer.end >= segmentStart + firstSamples || current.ended || current.cancelled);
+  if (current.cancelled) return null;
+  if (current.buffer.end <= segmentStart) return null;
+  if (current.buffer.end < segmentStart + firstSamples) {
+    current.buffer.push(new Float32Array(segmentStart + firstSamples - current.buffer.end));
+  }
+
+  const firstInputs = await proc(current.buffer.slice(segmentStart, segmentStart + firstSamples), {
+    is_streaming: true,
+    is_first_audio_chunk: true,
+  });
+  const { hop_length: hopLength, n_fft: nFft } = proc.feature_extractor.config;
+  const windowHalf = Math.floor(nFft / 2);
+  const samplesPerToken = proc.audio_length_per_tok * hopLength;
+  const secondsPerToken = samplesPerToken / SAMPLE_RATE;
+  const segmentOffset = segmentStart / SAMPLE_RATE;
+  let nextStart = null;
+
+  async function* inputFeatures() {
+    yield firstInputs.input_features;
+    let melFrame = proc.num_mel_frames_first_audio_chunk;
+    let startIndex = segmentStart + melFrame * hopLength - windowHalf;
+    while (!current.cancelled) {
+      if ((startIndex - segmentStart) / SAMPLE_RATE >= SEGMENT_SECONDS) {
+        nextStart = startIndex;
+        break;
+      }
+      const endNeeded = startIndex + proc.num_samples_per_audio_chunk;
+      await waitUntil(() => current.buffer.end >= endNeeded || current.ended || current.cancelled);
+      if (current.cancelled || current.buffer.end < endNeeded) break;
+      let batchEnd = endNeeded;
+      while (batchEnd + samplesPerToken <= current.buffer.end) batchEnd += samplesPerToken;
+      const inputs = await proc(current.buffer.slice(startIndex, batchEnd), {
+        is_streaming: true,
+        is_first_audio_chunk: false,
+      });
+      yield inputs.input_features;
+      melFrame += inputs.input_features.dims[2];
+      startIndex = segmentStart + melFrame * hopLength - windowHalf;
+      current.buffer.dropBefore(startIndex - SAMPLE_RATE);
+    }
+  }
+
+  const tokenizer = proc.tokenizer;
+  const specialIds = new Set(tokenizer.all_special_ids.map(BigInt));
+  let tokenCache = [];
+  let printedLength = 0;
+  let isPrompt = true;
+  let step = 0;
+  const segmentStartedAt = performance.now();
+
+  const streamer = new (class extends BaseStreamer {
+    put(value) {
+      if (current.cancelled) return;
+      if (isPrompt) {
+        isPrompt = false;
+        return;
+      }
+      step += 1;
+      // Hoe ver is de transcriptie in de audio, en hoe snel (voor real time zijn 1/secondsPerToken stappen per seconde nodig)?
+      if (step % 25 === 0) {
+        post("position", {
+          seconds: segmentOffset + step * secondsPerToken,
+          stepsPerSecond: step / ((performance.now() - segmentStartedAt) / 1000),
+          realtimeStepsPerSecond: 1 / secondsPerToken,
+        });
+      }
+      const tokens = value[0];
+      if (tokens.length === 1 && specialIds.has(tokens[0])) return;
+      tokenCache = tokenCache.concat(tokens);
+      const text = tokenizer.decode(tokenCache, { skip_special_tokens: true });
+      const delta = text.slice(printedLength);
+      printedLength = text.length;
+      if (delta) addText(current, delta, Math.max(0, segmentOffset + step * secondsPerToken - TRANSCRIPTION_DELAY_SECONDS));
+      // Cache af en toe legen (niet midden in een teken), anders wordt decoderen steeds trager.
+      if (tokenCache.length > 64 && !text.endsWith("�")) {
+        tokenCache = [];
+        printedLength = 0;
+      }
+    }
+    end() {}
+  })();
+
+  await model.generate({
+    input_ids: firstInputs.input_ids,
+    input_features: inputFeatures(),
+    max_new_tokens: Math.ceil(SEGMENT_SECONDS / secondsPerToken) + 200,
+    streamer,
+  });
+  return nextStart;
+}
+
+async function runSession(current) {
+  try {
+    await load();
+    let segmentStart = 0;
+    while (!current.cancelled && segmentStart !== null) {
+      segmentStart = await runSegment(current, segmentStart);
+    }
+    if (!current.cancelled) post("done", { words: current.words, text: current.text });
+  } catch (error) {
+    if (!current.cancelled) post("session-error", { message: errorText(error) });
+  } finally {
+    if (session === current) session = null;
+  }
+}
+
+self.addEventListener("message", (event) => {
+  const message = event.data;
+  if (message.type === "load") {
+    load().catch(() => {});
+  } else if (message.type === "start") {
+    if (session) session.cancelled = true;
+    session = { buffer: new SampleBuffer(), words: [], text: "", atWordStart: true, ended: false, cancelled: false };
+    void runSession(session);
+  } else if (message.type === "audio") {
+    if (session && !session.ended) session.buffer.push(message.samples);
+  } else if (message.type === "end") {
+    if (session && !session.ended) {
+      session.buffer.push(new Float32Array(SAMPLE_RATE * END_PADDING_SECONDS));
+      session.ended = true;
+    }
+  } else if (message.type === "cancel") {
+    if (session) session.cancelled = true;
   }
 });
 `;
@@ -2776,6 +3309,7 @@ let activeJobId: string | undefined;
 let vozPromise: Promise<Voz> | undefined;
 let appBundle = "";
 let workerBundle = "";
+let voxtralWorkerBundle = "";
 
 type JobStatus = {
   stage: "queued" | "loading_model" | "transcribing" | "complete" | "error";
@@ -2901,6 +3435,36 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
       "Referrer-Policy": "no-referrer",
     });
     response.end(pageHtml);
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/voxtral-worker.js") {
+    response.writeHead(200, {
+      "Content-Type": "text/javascript; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "X-Content-Type-Options": "nosniff",
+    });
+    response.end(voxtralWorkerBundle);
+    return;
+  }
+
+  const transformersOrtMatch = request.method === "GET"
+    && url.pathname.match(/^\/transformers-ort\/(ort-wasm-[a-z0-9.-]+\.(?:mjs|wasm))$/i);
+  if (transformersOrtMatch) {
+    const fileName = transformersOrtMatch[1];
+    let content: Buffer;
+    try {
+      content = await readFile(join(transformersOrtDirectory, fileName));
+    } catch {
+      sendJson(response, 404, { error: "Bestand niet gevonden." });
+      return;
+    }
+    response.writeHead(200, {
+      "Content-Type": fileName.endsWith(".wasm") ? "application/wasm" : "text/javascript; charset=utf-8",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+    });
+    response.end(content);
     return;
   }
 
@@ -3120,13 +3684,13 @@ const browserBundleOptions = {
 
 // De worker is een module-worker (Who gebruikt top-level await). importScripts() wordt in de
 // worker zelf opgevangen; zie het begin van transcriberWorker.
-async function buildWorkerBundle(): Promise<string> {
+async function buildWorkerBundle(contents = transcriberWorker, sourcefile = "transcriber-worker.js"): Promise<string> {
   const result = await build({
     ...browserBundleOptions,
     stdin: {
-      contents: transcriberWorker,
+      contents,
       resolveDir: process.cwd(),
-      sourcefile: "transcriber-worker.js",
+      sourcefile,
       loader: "js",
     },
   });
@@ -3145,6 +3709,14 @@ async function buildPages(): Promise<void> {
   await writeFile(join(outputDirectory, "styles.css"), styles);
   await writeFile(join(outputDirectory, "app.js"), await buildBrowserBundle());
   await writeFile(join(outputDirectory, "transcriber-worker.js"), await buildWorkerBundle());
+  await writeFile(join(outputDirectory, "voxtral-worker.js"), await buildWorkerBundle(voxtralWorker, "voxtral-worker.js"));
+  const transformersOrtOutputDirectory = join(outputDirectory, "transformers-ort");
+  await mkdir(transformersOrtOutputDirectory, { recursive: true });
+  for (const fileName of await readdir(transformersOrtDirectory)) {
+    if (/^ort-wasm-.*\.(?:mjs|wasm)$/.test(fileName)) {
+      await copyFile(join(transformersOrtDirectory, fileName), join(transformersOrtOutputDirectory, fileName));
+    }
+  }
   await copyFile(organizationLogoPath, join(outputDirectory, "RVB-logo.png"));
 
   const litertOutputDirectory = join(outputDirectory, "litert-wasm");
@@ -3191,6 +3763,7 @@ async function main(): Promise<void> {
 
   appBundle = await buildBrowserBundle();
   workerBundle = await buildWorkerBundle();
+  voxtralWorkerBundle = await buildWorkerBundle(voxtralWorker, "voxtral-worker.js");
   server.listen(port, host, () => {
     console.log(`Voz Transcriber staat klaar op http://${host}:${port}`);
   });
